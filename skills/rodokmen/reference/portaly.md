@@ -129,8 +129,22 @@ Adresy u nevyzkoušených portálů ověř při prvním použití (portály se m
 - Portál `https://www.mza.cz/actapublica/`, bez přihlášení. Adresa actapublica.eu bývá za Cloudflare zablokovaná
   („Sorry, you have been blocked“ – podle IP, i v běžném prohlížeči); když blokuje i mza.cz, ať uživatel vypne VPN
   nebo zkusí jinou síť.
-- Knihu najdi v prohlížeči podle obce nebo fary. Snímky jsou IIIF: adresu obrázku najdi v síťovém provozu a stáhni ji
-  přes `curl` (Python dostane HTTP 426). Dál podle „Ostatní portály“ níže.
+- Knihy podle obce jdou najít i bez prohlížeče: `curl "https://www.mza.cz/actapublica/matrika/hledani_obec?search_by_obec=<Obec>"`
+  (parametr `search_by_obec`) vrátí HTML tabulku (č. knihy, původce, N/O/Z od–do, indexy, obce, odkaz `matrika/detail/<id>`).
+  Text „Nebyly nalezeny žádné digitalizované stránky“ v detailu = svazek není online.
+- Snímky: detail obsahuje `CreateSeadragon([...])` s Deepzoom adresami (`/iipsrv/iipsrv.fcgi?Deepzoom=…jp2.dzi`).
+  Server iipsrv ale často vrací curl-u HTTP 426 a přímo (i jako `<img>`) 403 – pak funguje jen prohlížeč (Claude in Chrome,
+  `/chrome`) s OpenSeadragon na stránce detailu. Osvědčilo se: zvětšit `#openseadragon` (výška ~540 px), pomocná funkce
+  `go(n,x,y,w,h)` přes `viewer.goToPage(n-1)` + `viewer.addOnceHandler('open')` + `viewer.viewport.fitBounds(...)`, pak
+  snímek obrazovky. Po přechodu na jiný snímek čekat 3–5 s, jinak jsou dlaždice rozmazané. Snímek jde otevřít i adresou
+  `matrika/detail/<id>?image=<název>.jp2` (názvy po 10: …-00010.jp2 = snímek 1).
+- Výřez bez stažení snímku: přiblížit polovinu zápisu, snímek obrazovky (`save_to_disk`), totéž pro druhou polovinu,
+  `magick l.png r.png +append` → `vyrez.py`. Rozlišení je nižší než originál, ale čitelné.
+- Rejstříky MZA: číslo za jménem je obvykle **folio**, ne pořadové číslo zápisu (to se každý rok číslovalo znovu);
+  posun folio → snímek si změř na dvou místech.
+- **Indikační skici stabilního katastru** (1824–1843, čísla domů červeně, u pozemků jména držitelů „Waschek Mathias N° 17“)
+  má MZA na `https://www.mza.cz/indikacniskici/` (vyhledání podle katastru; německý název obce, např. „Komein“).
+  Výborné pro stránku místa a domu (viz `reference/mista.md`). Archiv ČÚZK (ags.cuzk.gov.cz/archiv) má totéž pro Čechy.
 
 ## Pražské policejní přihlášky 1850–1914 (Národní archiv) – `tools/policie_prihlasky.py`
 - Karty pražských rodin: hlava rodiny, manželka s rokem a místem narození, děti s roky, adresy, někdy místo sňatku.

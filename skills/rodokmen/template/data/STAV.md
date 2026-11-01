@@ -16,6 +16,7 @@ pak konec `research_log.md` a sekci „Rozpracováno“.
 | `data/prepisy.json` | Přepis originálu a český překlad každého zápisu. |
 | `data/zvyrazneni.json` | Rámečky – které místo výřezu čteme. |
 | `data/research_log.md` | Deník VŠECH hledání, i neúspěšných. |
+| `data/prosle_knihy.md` | Knihy a roky přečtené stránku po stránce a sledovaná příjmení. |
 | `data/udaje_od_rodiny.md` | Co řekla rodina, rodinné dokumenty. |
 | `data/zajimavosti.md`, `data/pribeh.md` | Texty na web. |
 | `data/archivni_dotazy.md` | Co by šlo zjistit jen v archivu. |

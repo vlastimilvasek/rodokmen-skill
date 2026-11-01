@@ -17,3 +17,5 @@ web/public/zdroje/
 web/public/prihlaseni.html
 web/nginx.conf
 web/netlify/edge-functions/
+# hotový web pro vlastní server – samostatný repozitář (tools/nasadit_plesk.py)
+nasazeni/

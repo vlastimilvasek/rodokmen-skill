@@ -125,6 +125,8 @@ Základní smyčka pro každou osobu:
    Narazíš-li po cestě na **zjevně související výskyt** (vzácné příjmení rodu, stejný dům, jméno z rodinného
    vyprávění), zapiš ho do výsledku v deníku se snímkem – je to jen stopa, ne doklad. Když se hledání zasekne,
    projdi deník právě kvůli takovým stopám.
+   Čteš-li knihu **stránku po stránce** (ne jen podle rejstříku), zapiš ji i do `data/prosle_knihy.md`: kniha, roky,
+   snímky a **na která příjmení jsi dával pozor**. Před dalším hledáním se tam podívej – deník je na to moc podrobný.
 7. Spusť `python3 -I tools/kontrola.py` a oprav chyby.
 
 Pravidla, která chrání kvalitu (naučená na skutečném projektu):
@@ -195,7 +197,8 @@ Podrobně `reference/web.md`. Ve zkratce:
 
 ## Fáze 5 – Zveřejnění (volitelné, jen se souhlasem)
 Výchozí cesta je **Netlify** (zdarma): `npm run nasadit`. Přihlášení k Netlify a první propojení webu jsou interaktivní –
-dej je uživateli jako `! npx netlify-cli login` atd. (postup v `reference/web.md`). Pokročilá varianta: vlastní server (Docker/CapRover).
+dej je uživateli jako `! npx netlify-cli login` atd. (postup v `reference/web.md`). Pokročilá varianta: vlastní server (Docker/CapRover,
+nebo Apache/Plesk přes `tools/nasadit_plesk.py` – viz `reference/web.md`).
 Nic nezveřejňuj bez výslovného souhlasu uživatele.
 
 ## Poznámky pro správce skillu
@@ -232,6 +235,7 @@ Nedělej to pořád. Postup:
 | `data/zaznamy.json`, `data/svazky.json` | zápisy z matrik a svazky, ze kterých jsou |
 | `data/prepisy.json`, `data/zvyrazneni.json` | přepisy s překlady, rámečky čteného místa |
 | `data/research_log.md` | deník všech hledání |
+| `data/prosle_knihy.md` | přehled knih a let přečtených stránku po stránce a sledovaných příjmení |
 | `data/udaje_od_rodiny.md`, `data/archivni_dotazy.md` | co víme od rodiny; co jen v archivu |
 | `data/zajimavosti.md`, `data/pribeh.md`, `data/web.json`, `data/dokumenty.json`, `data/mista.json` | texty a nastavení webu, rodinné fotky, místa na mapě |
 | `vyrezy/`, `zdroje/` | výřezy zápisů a dokumentů (web / plné rozlišení), název = klíč + `.jpg` |
@@ -264,3 +268,5 @@ Nedělej to pořád. Postup:
 | `kontrola.py` | kontrola dat; hlásí i citlivé údaje na webu a kdy psát příběh |
 | `export_web.py` | data → web (volá ho `npm run data`) |
 | `fan_chart.py vystupy/` | vějíř předků jako plakát k tisku |
+| `ged_export.py [vystupy/rodokmen.ged]` | export rodokmenu do GEDCOM 5.5.1 (pro MyHeritage, Gramps…), zápisy jako zdroje |
+| `nasadit_plesk.py` | hotový web do `nasazeni/` pro vlastní server s Apache/Plesk (přihlášení přes `.htaccess`) |

@@ -74,11 +74,22 @@ zkus v `launch.json` `"runtimeExecutable": "node"` a `"runtimeArgs": ["web/node_
 ## Vlastní server (pokročilé)
 - Docker: `web/Dockerfile` (build Astro → nginx s `nginx.conf` z `nginx.sablona.conf`). Před buildem image vždy `npm run data`.
 - CapRover: `npm run deploy-caprover` (vyžaduje nainstalovaný a přihlášený `caprover` CLI).
+- **Apache / Plesk (sdílený hosting)**: `cd web && npm run data && npm run build`, pak z kořene projektu
+  `python3 -I tools/nasadit_plesk.py`. Zkopíruje `web/dist` do `nasazeni/` (samostatný git repozitář, v `.gitignore`),
+  přidá `.htaccess` s přihlášením (cookie s otiskem odpovědi, odpověď sama tam není) a uloží commit. Odeslání
+  `cd nasazeni && git push` jen se souhlasem uživatele. Jednou: soukromý repozitář na GitHubu (`git remote add origin …`),
+  v Plesku rozšíření Git napojené na tento repozitář s nasazením do kořene webu a **vypnout „Obsluhovat statické soubory
+  přímo nginxem“** – jinak nginx `.htaccess` obejde a web je bez přihlášení. Ověř v anonymním okně.
 
 ## Úpravy vzhledu
 Styly `web/src/styles/global.css` (barvy v `:root`), rozložení `web/src/layouts/Base.astro`, stránky `web/src/pages/`.
 Barvy rodů jsou v `tools/export_web.py` (`LINE_COLORS`) a `tools/fan_chart.py` (`BASE`). Upravuj jen na přání uživatele
 a po úpravě zkontroluj web na mobilu i počítači.
+
+## Export do GEDCOM
+`python3 -I tools/ged_export.py [vystupy/rodokmen.ged]` – rodokmen do GEDCOM 5.5.1 (UTF-8) pro MyHeritage, Gramps, Geni.
+Rodiny 2n × 2n+1, fakta `*`/`×`/`†` → narození/sňatek/úmrtí (`asi`/`před`/`po` → ABT/BEF/AFT), ostatní fakta, stav doložení
+a poznámka → NOTE, zápisy z matrik → zdroje (SOUR) s odkazem na snímek a překladem. Kontrola: `ged_import.py` na výsledek.
 
 ## Vějíř jako plakát
 `python3 -I tools/fan_chart.py vystupy/` → SVG a HTML (a PNG, je-li nainstalovaný Google Chrome, na Windows i Microsoft Edge) k tisku.
