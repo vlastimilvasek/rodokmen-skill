@@ -12,13 +12,20 @@ export const byK = Object.fromEntries([
   ...Object.entries(site.aliases ?? {}).map(([k, slug]) => [Number(k), people[slug]]),
 ]);
 export const lineByK = Object.fromEntries(Object.values(lines).map((l) => [l.k, l]));
+export const places = site.places ?? [];
+export const placeBySlug = Object.fromEntries(places.map((pl) => [pl.slug, pl]));
+export const docByImg = Object.fromEntries((docs ?? []).map((d) => [d.img, d]));
 
 export const href = {
   person: (slug) => `/osoba/${slug}/`,
   family: (id) => `/rodina/${id}/`,
   line: (slug) => `/rod/${slug}/`,
   record: (key) => `/zdroj/${key}/`,
+  place: (slug) => `/misto/${slug}/`,
 };
+
+/** Rozpětí let pro přehledy: [1772, 1830] → „1772–1830“, [1905, 1905] → „1905“. */
+export const span = (s) => (!s ? '' : s[0] === s[1] ? String(s[0]) : `${s[0]}–${s[1]}`);
 
 /** Sortable number from dates like "12. 5. 1811", "3/1867", "12/1790", "1797". */
 export function dateKey(date) {

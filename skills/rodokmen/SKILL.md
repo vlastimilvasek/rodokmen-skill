@@ -181,6 +181,10 @@ Podrobně `reference/pribehy.md`. Tohle je to, co rodina na webu čte nejradši,
 - **„Příběh <hlavního rodu>“** (Příběh Novákových): jakmile má hlavní rod ~5 doložených generací, nabídni ho.
   Koncept napiš **do chatu** ke schválení, pak `data/pribeh.md` a v `web.json` menu, tlačítko a úvod.
   Je hlavní věcí na úvodní stránce webu.
+- **Místa a domy** (`reference/mista.md`): každá obec z `mista.json` má na webu stránku – kdo tam kdy žil a v kterém domě
+  se poskládá z faktů osob sama. Když se v datech opakuje **stejné číslo domu přes generace**, nabídni uživateli
+  stránku rodového domu: indikační skica stabilního katastru (jméno předka u domu!), dnešní adresa, staré mapy
+  a fotky (`dokumenty.json` s `misto`, `dum`, `zdroj`), krátká historie obce a úryvky z kroniky (`data/mista/<slug>.md`).
 
 ## Fáze 4 – Web
 Podrobně `reference/web.md`. Ve zkratce:
@@ -237,7 +241,8 @@ Nedělej to pořád. Postup:
 | `data/research_log.md` | deník všech hledání |
 | `data/prosle_knihy.md` | přehled knih a let přečtených stránku po stránce a sledovaných příjmení |
 | `data/udaje_od_rodiny.md`, `data/archivni_dotazy.md` | co víme od rodiny; co jen v archivu |
-| `data/zajimavosti.md`, `data/pribeh.md`, `data/web.json`, `data/dokumenty.json`, `data/mista.json` | texty a nastavení webu, rodinné fotky, místa na mapě |
+| `data/zajimavosti.md`, `data/pribeh.md`, `data/web.json`, `data/dokumenty.json`, `data/mista.json` | texty a nastavení webu, rodinné fotky a staré mapy, místa (mapa, popis, domy) |
+| `data/mista/<slug>.md` | text stránky místa: historie obce, úryvky z kronik (volitelné) |
 | `vyrezy/`, `zdroje/` | výřezy zápisů a dokumentů (web / plné rozlišení), název = klíč + `.jpg` |
 | `dokumenty/`, `pracovni/` | originály od rodiny; pracovní soubory (nejdou na web) |
 | `poznamky_pro_skill.md` | poznámky pro správce skillu (chyby, nové archivy, nápady) – posílá je uživatel ručně |
@@ -263,7 +268,7 @@ Nedělej to pořád. Postup:
 | `napady.py` | náměty na zajímavosti z dat |
 | `vyrez.py <stránka.jpg> <klíč> x0,y0,x1,y1` | výřez do `zdroje/` a `vyrezy/` |
 | `ramecek.py <klíč> x0,y0,x1,y1` | rámeček čteného místa + kontrolní obrázek |
-| `mista.py pridej "Obec"` / `mista.py` | místa pro mapu (souřadnice z OpenStreetMap) |
+| `mista.py pridej "Obec"` / `mista.py` | místa pro mapu a stránky míst (souřadnice z OpenStreetMap) |
 | `zapis.py <soubor> <klíč> <vstup.json> [--sloucit]` | přidá / změní položku v `zaznamy`, `svazky`, `prepisy`… beze změny formátu |
 | `kontrola.py` | kontrola dat; hlásí i citlivé údaje na webu a kdy psát příběh |
 | `export_web.py` | data → web (volá ho `npm run data`) |

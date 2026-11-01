@@ -1,0 +1,102 @@
+---
+import Base from '../../layouts/Base.astro';
+import PersonLink from '../../components/PersonLink.astro';
+import FamilyMap from '../../components/FamilyMap.astro';
+import { places, placeBySlug, docByImg, lineByK, href, span } from '../../lib/data.js';
+
+export function getStaticPaths() {
+  return places.map((pl) => ({ params: { slug: pl.slug } }));
+}
+const pl = placeBySlug[Astro.params.slug];
+// texty míst (data/mista/<slug>.md) – zkopíruje je `npm run data`
+const texts = import.meta.glob('../../generated/mista/*.md', { eager: true });
+const Text = texts[`../../generated/mista/${pl.slug}.md`]?.Content;
+const docs = pl.docs.map((img) => docByImg[img]).filter(Boolean);
+const inHouse = new Set(pl.houses.flatMap((h) => h.docs));
+const otherDocs = docs.filter((d) => !inHouse.has(d.img));
+---
+<Base title={pl.name} description={`${pl.name} – kde žili naši předci`}>
+  <p class="crumbs"><a href="/mista/">Místa</a></p>
+  <h1>{pl.name}</h1>
+  <div class="chips">
+    {pl.years && <span class="chip">{span(pl.years)}</span>}
+    {pl.residents.length > 0 && <span class="chip">{pl.residents.length} {pl.residents.length === 1 ? 'předek' : pl.residents.length < 5 ? 'předci' : 'předků'}</span>}
+    {pl.lines.filter((l) => lineByK[l.k]).map((l) => <a class="chip" href={href.line(lineByK[l.k].slug)}><span class="dot" style={`background:${lineByK[l.k].color}`}></span>rod {lineByK[l.k].name}</a>)}
+    {pl.hypothesis && <span class="chip st-prob">hypotéza</span>}
+  </div>
+  {pl.desc && <p class="lead">{pl.desc}</p>}
+
+  <div class="place-top">
+    {pl.photo && (
+      <figure class="place-photo">
+        <a href={`/img/${pl.photo}.jpg`} target="_blank" rel="noopener"><img src={`/img/${pl.photo}.jpg`} alt={pl.photoCaption || pl.name} /></a>
+        {pl.photoCaption && <figcaption>{pl.photoCaption}</figcaption>}
+      </figure>
+    )}
+    <div class="place-map"><FamilyMap focus={pl.slug} height="280px" /></div>
+  </div>
+
+  {Text && <div class="prose place-text"><Text /></div>}
+
+  {pl.residents.length > 0 && (
+    <>
+      <h2>Kdo tu žil</h2>
+      <p class="small muted">Podle zápisů z matrik a údajů od rodiny, seřazeno podle prvního roku v obci.</p>
+      <div class="table-box"><table class="residents">
+        <thead><tr><th>Předek</th><th>Kdy</th><th>Dům</th><th>Co o tom víme</th></tr></thead>
+        <tbody>
+          {pl.residents.map((r) => (
+            <tr>
+              <td><PersonLink slug={r.slug} /></td>
+              <td>{span(r.span)}</td>
+              <td>{r.houses.map((h, i) => <>{i > 0 && ', '}<a href={`#dum-${h}`}>č. {h}</a></>)}</td>
+              <td class="small">{r.facts.map((f) => f.text).join(' · ')}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table></div>
+    </>
+  )}
+
+  {pl.houses.length > 0 && (
+    <>
+      <h2>Domy</h2>
+      <p class="small muted">Čísla popisná, jak je uvádějí matriky. Čísla domů se během let měnila (přečíslování) – „dnes“ je dnešní adresa, pokud ji známe.</p>
+      <div class="houses">
+        {pl.houses.map((h) => (
+          <section class="card house" id={`dum-${h.num}`}>
+            <h3>č. {h.num}{h.today && <span class="muted small"> · dnes {h.today}</span>}</h3>
+            {h.desc && <p class="small">{h.desc}</p>}
+            {h.events.length > 0 && (
+              <ol class="timeline">
+                {h.events.map((e) => (
+                  <li><span class="yr">{e.year ?? '–'}</span><span><PersonLink slug={e.slug} />{e.kind && <span class="kind">{e.kind}</span>}<br /><span class="small muted">{e.text}</span></span></li>
+                ))}
+              </ol>
+            )}
+            {h.docs.length > 0 && (
+              <div class="docs">{h.docs.map((img) => docByImg[img]).filter(Boolean).map((d) => (
+                <figure><a href={`/img/${d.img}.jpg`} target="_blank" rel="noopener"><img src={`/img/${d.img}.jpg`} alt={d.caption} loading="lazy" /></a>
+                  <figcaption>{d.caption}{d.source && <span class="src">Zdroj: {d.source}</span>}</figcaption></figure>
+              ))}</div>
+            )}
+          </section>
+        ))}
+      </div>
+    </>
+  )}
+
+  {otherDocs.length > 0 && (
+    <>
+      <h2>Staré mapy a obrázky</h2>
+      <div class="docs">{otherDocs.sort((a, b) => (a.year ?? 9999) - (b.year ?? 9999)).map((d) => (
+        <figure><a href={`/img/${d.img}.jpg`} target="_blank" rel="noopener"><img src={`/img/${d.img}.jpg`} alt={d.caption} loading="lazy" /></a>
+          <figcaption>{d.year && <strong>{d.year} · </strong>}{d.caption}{d.source && <span class="src">Zdroj: {d.source}</span>}</figcaption></figure>
+      ))}</div>
+    </>
+  )}
+
+  <div class="next-step">
+    <p><a class="btn" href="/mista/">Všechna místa →</a> <a class="btn" href="/mapa/">Mapa →</a></p>
+  </div>
+</Base>

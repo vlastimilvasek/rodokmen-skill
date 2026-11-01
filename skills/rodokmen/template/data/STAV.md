@@ -20,7 +20,8 @@ pak konec `research_log.md` a sekci „Rozpracováno“.
 | `data/udaje_od_rodiny.md` | Co řekla rodina, rodinné dokumenty. |
 | `data/zajimavosti.md`, `data/pribeh.md` | Texty na web. |
 | `data/archivni_dotazy.md` | Co by šlo zjistit jen v archivu. |
-| `data/mista.json`, `data/dokumenty.json`, `data/web.json` | Mapa, rodinné fotky a dokumenty, nastavení webu. |
+| `data/mista.json`, `data/dokumenty.json`, `data/web.json` | Místa (mapa, popis, domy), rodinné fotky, staré mapy, nastavení webu. |
+| `data/mista/<obec>.md` | Historie obce a úryvky z kronik pro stránku místa. |
 | `vyrezy/`, `zdroje/` | Výřezy zápisů pro web (1800 px) a v plném rozlišení. |
 | `dokumenty/` | Rodinné dokumenty a fotky od uživatele (originály). |
 | `pracovni/` | Pracovní soubory (stažené stránky, kontrolní obrázky) – nejdou na web. |

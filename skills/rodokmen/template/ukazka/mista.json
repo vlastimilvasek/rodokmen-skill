@@ -4,7 +4,14 @@
   "dotaz": "Holice, Česko",
   "lat": 50.0663,
   "lon": 15.9859,
-  "osm": "Holice, okres Pardubice, Pardubický kraj, 534 01, Česko"
+  "osm": "Holice, okres Pardubice, Pardubický kraj, 534 01, Česko",
+  "popis": "Městečko na Pardubicku, kde Novákovi přes 150 let kovali v kovárně čp. 112.",
+  "domy": {
+   "112": {
+    "popis": "Kovárna rodu Novákových – od sňatku Václava Nováka s Kateřinou Ryšavou (1786) v rodě pět generací."
+   },
+   "41": "Selská usedlost Králů."
+  }
  },
  "Dolní Roveň": {
   "re": "Dolní Rov",

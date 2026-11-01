@@ -32,6 +32,9 @@ const path = [...p.path].reverse().filter(Boolean);
   )}
   {p.facts.length > 0 && <ul class="facts">{p.facts.map((f) => <li>{f}</li>)}</ul>}
   {p.note && <p class="note">{p.note}</p>}
+  {p.places?.length > 0 && (
+    <p class="lived">{p.sex === 'F' ? 'Žila' : 'Žil'}: {p.places.map((pl, i) => <>{i > 0 && ' → '}<a href={href.place(pl.slug)}>{pl.name}</a>{pl.houses.length > 0 && <span class="muted"> ({pl.houses.map((h) => `č. ${h}`).join(', ')})</span>}</>)}</p>
+  )}
 
   <h2>Rodina</h2>
   <div class="grid2">
@@ -71,7 +74,7 @@ const path = [...p.path].reverse().filter(Boolean);
   {p.docs.length > 0 && (
     <>
       <h2>Rodinné dokumenty</h2>
-      <div class="docs">{p.docs.map((d) => <figure><a href={`/img/${d.img}.jpg`} target="_blank" rel="noopener"><img src={`/img/${d.img}.jpg`} alt={d.caption} loading="lazy" /></a><figcaption>{d.caption}</figcaption></figure>)}</div>
+      <div class="docs">{p.docs.map((d) => <figure><a href={`/img/${d.img}.jpg`} target="_blank" rel="noopener"><img src={`/img/${d.img}.jpg`} alt={d.caption} loading="lazy" /></a><figcaption>{d.caption}{d.source && <span class="src">Zdroj: {d.source}</span>}</figcaption></figure>)}</div>
     </>
   )}
 

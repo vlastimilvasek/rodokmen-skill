@@ -67,13 +67,16 @@ Zapisuje `ramecek.py`. Rámeček má obepnout celý čtený zápis (ne jen jmén
 `{"Holice": {"re": "Holic", "dotaz": "Holice, Česko", "lat": 50.066, "lon": 15.986}}` – `re` je regulární výraz hledaný
 ve faktech osob (kmen slova, aby sedělo skloňování: „Holic“ najde Holice i v Holicích). Spravuje `mista.py`.
 Pozor na kolize (Hradec Králové × Nový Hradec Králové – použij `(?<!Nový )Hradec`; krátká jména jako `\bBuku?\b`).
-Hypotéza: `"hypoteza": true, "rod": 8`. Když OpenStreetMap obec nenajde („Žár“, malé osady), zkus třetí parametr – dotaz: `mista.py pridej "Žár" "Žár" "Žár, Zdíkov, okres Prachatice"`
+Hypotéza: `"hypoteza": true, "rod": 8`. Pro stránku místa volitelně `popis`, `foto`, `foto_popis` a `domy`
+(`{"112": "popis"}` nebo `{"112": {"popis": "…", "dnes": "dnešní adresa"}}`) – viz `mista.md`. Když OpenStreetMap obec nenajde („Žár“, malé osady), zkus třetí parametr – dotaz: `mista.py pridej "Žár" "Žár" "Žár, Zdíkov, okres Prachatice"`
 nebo dotaz s větší obcí či okresem. U **víceznačných názvů** (Podolí, Dub, Lhota) vezme OpenStreetMap kteroukoli ves
 („Podolí, Česko“ = Podolí u Brna) – v posledním sloupci výpisu zkontroluj okres a dej dotaz se sousední obcí
 (`mista.py pridej "Podolí" "Podol" "Podolí, Odlochovice"`). Místopis nejlíp zná rodina – když si nejsi jistý, zeptej se.
 
 ## `dokumenty.json` – rodinné fotky a dokumenty na webu
 `[{"img": "foto_svatba_1919", "popis": "Svatba Jana a Josefy, Holice 1919.", "osoby": [8, 9]}]`
+Staré mapy a fotky obcí: navíc `"misto": "Holice"` (přesně jako v `mista.json`), `"dum": "112"`, `"rok": 1839`,
+`"zdroj": "Archiv ČÚZK, císařský otisk"` – ukážou se na stránce místa (u domu), `osoby` jsou pak nepovinné.
 Obrázek ulož přes `vyrez.py dokumenty/<sken>.jpg foto_svatba_1919` (vznikne `vyrezy/` i `zdroje/`).
 
 ## `web.json` – nastavení webu
@@ -88,6 +91,7 @@ Viz `web.md`.
 - `pribeh.md` – „Příběh <hlavního rodu>“: frontmatter `title`, `lead` + kapitoly `##`; když soubor neexistuje,
   položka menu se skryje. Jak psát: `pribehy.md`.
 - Poznámky pro Clauda v markdownu piš jako `<!-- … -->` – na web nejdou.
+- `mista/<slug>.md` – text stránky místa (historie obce, úryvky z kronik), viz `mista.md`.
 - `archivni_dotazy.md`, `udaje_od_rodiny.md` – volný text.
 
 ## Odkazy na osoby (slug)

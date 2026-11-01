@@ -5,7 +5,7 @@ Použití: kontrola.py
 Vypíše CHYBY (rozbijí web nebo jsou věcně špatně) a UPOZORNĚNÍ (něco chybí, doplnit).
 Návratový kód 1, pokud jsou chyby.
 """
-import datetime, json, os, re, sys
+import datetime, json, os, re, sys, unicodedata
 for _s in (sys.stdout, sys.stderr):   # UTF-8 výstup i na Windows bez -X utf8 (cp1250 neumí třeba „→“)
     if hasattr(_s, "reconfigure"):
         _s.reconfigure(encoding="utf-8", errors="replace")
@@ -17,6 +17,11 @@ DATA = os.path.join(ROOT, "data")
 def jload(name, default):
     p = os.path.join(DATA, name)
     return json.load(open(p, encoding="utf-8")) if os.path.exists(p) else default
+
+
+def slugify(text):   # stejně jako export_web.py – adresa stránky a název souboru data/mista/<slug>.md
+    t = unicodedata.normalize("NFKD", text).encode("ascii", "ignore").decode().lower()
+    return re.sub(r"[^a-z0-9]+", "-", t).strip("-")
 
 
 def main():
@@ -85,13 +90,34 @@ def main():
         if k not in cited:
             warn.append(f"zápis {k}: necituje ho žádná osoba (doplnit do 'r' u osoby nebo bočního příbuzného)")
 
-    for name, e in jload("mista.json", {}).items():
+    mista = jload("mista.json", {})
+    for name, e in mista.items():
         if "lat" not in e:
             warn.append(f"místo {name}: nemá souřadnice (spusťte tools/mista.py)")
         try:
             re.compile(e.get("re") or "")
         except re.error as ex:
             err.append(f"místo {name}: špatný výraz '{e.get('re')}': {ex}")
+        if e.get("foto") and not os.path.exists(os.path.join(ROOT, "vyrezy", e["foto"] + ".jpg")):
+            warn.append(f"místo {name}: foto '{e['foto']}' není ve vyrezy/ (uložte ho přes tools/vyrez.py)")
+        if not isinstance(e.get("domy", {}), dict):
+            err.append(f"místo {name}: 'domy' má být slovník {{\"17\": \"popis\"}}")
+    slugy = {slugify(n): n for n in mista}
+    md_dir = os.path.join(DATA, "mista")
+    for f in sorted(os.listdir(md_dir)) if os.path.isdir(md_dir) else []:
+        if f.endswith(".md") and f[:-3] not in slugy:
+            warn.append(f"data/mista/{f}: žádné místo v mista.json se tak nejmenuje (název souboru = název obce "
+                        f"bez diakritiky, malými písmeny, mezery jako '-': {', '.join(sorted(slugy)) or '–'})")
+    for d in jload("dokumenty.json", []):
+        img = d.get("img", "?")
+        if not os.path.exists(os.path.join(ROOT, "vyrezy", img + ".jpg")):
+            warn.append(f"dokument {img}: chybí vyrezy/{img}.jpg (tools/vyrez.py) – na webu se neukáže")
+        if d.get("misto") and d["misto"] not in mista:
+            warn.append(f"dokument {img}: místo '{d['misto']}' není v data/mista.json (název musí sedět přesně)")
+        if d.get("dum") and not d.get("misto"):
+            warn.append(f"dokument {img}: má 'dum', ale chybí 'misto'")
+        if d.get("misto") and not d.get("zdroj"):
+            warn.append(f"dokument {img}: u mapy nebo staré fotky uveď 'zdroj' (archiv, sbírka, autor)")
 
     cfg = jload("web.json", {})
     if not (cfg.get("prihlaseni") or {}).get("odpoved") and not (cfg.get("prihlaseni") or {}).get("otevreny"):
@@ -125,7 +151,9 @@ def main():
         roky = [int(y) for y in re.findall(r"\b1[5-9]\d\d|20\d\d\b", p.get("y", "") + " " + text)]
         texty.append((f"osoba {k}", text + (f" {hranice}" if roky and min(roky) >= 1870 or k < 8 else "")))
     texty += [(f"boční příbuzný {s.get('n')}", s.get("n", "") + " " + s.get("t", "")) for s in SIDE]
-    for f in ("zajimavosti.md", "pribeh.md"):
+    md_texty = ["zajimavosti.md", "pribeh.md"] + [os.path.join("mista", f) for f in
+                                                   (sorted(os.listdir(md_dir)) if os.path.isdir(md_dir) else []) if f.endswith(".md")]
+    for f in md_texty:
         if os.path.exists(os.path.join(DATA, f)):
             texty += [(f, odst) for odst in open(os.path.join(DATA, f), encoding="utf-8").read().split("\n\n")]
     for kde, text in texty:

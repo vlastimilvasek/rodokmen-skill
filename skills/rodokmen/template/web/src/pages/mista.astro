@@ -1,0 +1,37 @@
+---
+import Base from '../layouts/Base.astro';
+import { places, lineByK, href, span } from '../lib/data.js';
+const list = places.filter((pl) => !pl.hypothesis)
+  .sort((a, b) => b.residents.length - a.residents.length || a.name.localeCompare(b.name, 'cs'));
+const hypo = places.filter((pl) => pl.hypothesis);
+---
+<Base title="Místa">
+  <h1>Místa našich předků</h1>
+  <p class="lead">Obce, kde předci žili, se křtili, brali a umírali. U každé najdete, kdo tam kdy žil, v kterých domech,
+    a – kde je máme – staré mapy, fotky a kus historie obce.</p>
+  {list.length === 0 && <p>Místa se ukážou, až budou mít předci v údajích obce a ty budou v <code>data/mista.json</code>.</p>}
+  <div class="grid2 places">
+    {list.map((pl) => (
+      <a class="card card-link place-card" href={href.place(pl.slug)}>
+        {pl.photo && <img src={`/img/${pl.photo}.jpg`} alt={pl.photoCaption || pl.name} loading="lazy" />}
+        <h3>{pl.name}</h3>
+        {pl.desc && <p class="small">{pl.desc}</p>}
+        <p class="small muted">
+          {pl.residents.length} {pl.residents.length === 1 ? 'předek' : pl.residents.length < 5 ? 'předci' : 'předků'}
+          {pl.years && <> · {span(pl.years)}</>}
+          {pl.houses.length > 0 && <> · {pl.houses.length} {pl.houses.length === 1 ? 'dům' : pl.houses.length < 5 ? 'domy' : 'domů'}</>}
+        </p>
+        <p class="dots">{pl.lines.map((l) => <span class="dot" style={`background:${lineByK[l.k]?.color ?? '#8a6d52'}`} title={lineByK[l.k]?.name ?? 'rodiče a prarodiče'}></span>)}</p>
+      </a>
+    ))}
+  </div>
+  {hypo.length > 0 && (
+    <>
+      <h2>Hypotézy</h2>
+      <p class="small muted">Místa, kam stopy vedou, ale vazba zatím není prokázaná: {hypo.map((pl, i) => <>{i > 0 && ', '}<a href={href.place(pl.slug)}>{pl.name}</a></>)}.</p>
+    </>
+  )}
+  <div class="next-step">
+    <p>Všechna místa najednou ukazuje <a href="/mapa/">mapa</a> – barvy podle rodů.</p>
+  </div>
+</Base>

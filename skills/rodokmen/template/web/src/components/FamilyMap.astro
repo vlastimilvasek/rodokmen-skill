@@ -3,16 +3,19 @@
 import 'leaflet/dist/leaflet.css';
 import site from '../data/site.json';
 import { lineByK, people, href } from '../lib/data.js';
-const { height = '70vh', compact = false } = Astro.props;
+// focus = slug místa: malá mapa jen s tímto místem (stránka místa), přiblížená na obec
+const { height = '70vh', compact = false, focus = null } = Astro.props;
 const ROOT_COLOR = '#8a6d52';
 const lines = Object.fromEntries(Object.values(lineByK).map((l) => [l.k, { name: l.name, color: l.color, slug: l.slug }]));
 lines[0] = { name: 'rodiče a prarodiče', color: ROOT_COLOR, slug: null };
+const shown = site.places.filter((pl) => !focus || pl.slug === focus)
+  .map(({ name, slug, lat, lon, lines, years, hypothesis }) => ({ name, slug, lat, lon, lines, years, hypothesis }));
 const names = {};
-for (const pl of site.places) for (const l of pl.lines) for (const s of l.people) names[s] = [people[s].name, people[s].years, href.person(s)];
-const payload = JSON.stringify({ places: site.places, lines, names, compact });
+for (const pl of shown) for (const l of pl.lines) for (const s of l.people) names[s] = [people[s].name, people[s].years, href.person(s)];
+const payload = JSON.stringify({ places: shown, lines, names, compact: compact || !!focus, focus: !!focus });
 ---
 <div class="fmap" style={`height:${height}`} data-map={payload}></div>
-{!compact && (
+{!compact && !focus && (
   <div class="fmap-legend">
     {Object.entries(lines).filter(([k]) => k !== '0').map(([k, l]) => (
       <label><input type="checkbox" data-line={k} checked /><span class="dot" style={`background:${l.color}`}></span>{l.name}</label>
@@ -27,7 +30,7 @@ const payload = JSON.stringify({ places: site.places, lines, names, compact });
   const esc = (v: unknown) => String(v ?? '').replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 
   for (const el of document.querySelectorAll<HTMLElement>('.fmap')) {
-    const { places, lines, names, compact } = JSON.parse(el.dataset.map!);
+    const { places, lines, names, compact, focus } = JSON.parse(el.dataset.map!);
     // Gesture handling: page scroll stays page scroll. Zoom with Ctrl/⌘ + wheel (or trackpad pinch),
     // on touch devices move the map with two fingers; otherwise show a short hint.
     const touch = window.matchMedia('(pointer: coarse)').matches;
@@ -75,7 +78,7 @@ const payload = JSON.stringify({ places: site.places, lines, names, compact });
           .join('<br>');
         const head = line.slug ? `<a href="/rod/${esc(line.slug)}/">${esc(line.name)}</a>` : esc(line.name);
         marker.bindPopup(
-          `<strong>${esc(pl.name)}</strong>${pl.years ? ` <span class="y">${pl.years[0]}–${pl.years[1]}</span>` : ''}<br>` +
+          `<strong><a href="/misto/${esc(pl.slug)}/">${esc(pl.name)}</a></strong>${pl.years ? ` <span class="y">${pl.years[0]}–${pl.years[1]}</span>` : ''}<br>` +
             `<span class="pl" style="--c:${esc(line.color)}">${head}</span><br>` +
             (pl.hypothesis ? 'hypotéza – vazba zatím neprokázaná' : who),
           { maxHeight: 260 }
@@ -85,7 +88,7 @@ const payload = JSON.stringify({ places: site.places, lines, names, compact });
         bounds.push(pos);
       });
     }
-    if (bounds.length) map.fitBounds(L.latLngBounds(bounds), { padding: [20, 20], maxZoom: 11 });
+    if (bounds.length) map.fitBounds(L.latLngBounds(bounds), { padding: [20, 20], maxZoom: focus ? 13 : 11 });
     else map.setView([49.8, 15.5], 7);
     el.parentElement?.querySelectorAll<HTMLInputElement>('.fmap-legend input').forEach((cb) =>
       cb.addEventListener('change', () => {

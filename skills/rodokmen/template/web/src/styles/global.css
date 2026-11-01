@@ -206,3 +206,28 @@ main.full { max-width: none; padding: 0; }
 .card-link::after { content: '→'; position: absolute; top: 0.7rem; right: 0.9rem; font-size: 1.15rem; color: var(--accent); opacity: 0.55; transition: opacity 0.15s, transform 0.15s; }
 .card-link:hover::after { opacity: 1; transform: translateX(3px); }
 .card-link h3 { padding-right: 1.4rem; }
+
+/* places (Místa) */
+.place-card img { width: 100%; height: 150px; object-fit: cover; border-radius: 6px; margin-bottom: 0.4rem; }
+.place-card .dots { display: flex; gap: 0.25rem; margin: 0.2rem 0 0; }
+.place-card .dot { width: 0.7rem; height: 0.7rem; border-radius: 50%; border: 1px solid #3b2e22; }
+.place-top { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 1rem; align-items: start; margin: 0.8rem 0 1.2rem; }
+.place-top:not(:has(.place-photo)) { grid-template-columns: 1fr; }
+.place-photo { margin: 0; }
+.place-photo img { display: block; width: 100%; border-radius: 10px; border: 1px solid var(--line); }
+.place-photo figcaption, .docs figcaption .src { font-size: 0.82rem; color: var(--muted); }
+.docs figcaption .src { display: block; margin-top: 0.2rem; font-style: italic; }
+.place-text h2 { font-size: 1.3rem; }
+.place-text blockquote { margin: 0.8rem 0; padding: 0.5rem 1rem; border-left: 3px solid #efb45f; background: #fff8ea; font-family: var(--serif); }
+.residents td:nth-child(2), .residents td:nth-child(3) { white-space: nowrap; }
+.houses { display: grid; gap: 1rem; }
+.house h3 { margin-bottom: 0.3rem; }
+.house:target { border-color: #e0952f; box-shadow: 0 0 0 3px #f6dcb0; }
+.timeline { list-style: none; margin: 0.5rem 0; padding: 0; border-left: 2px solid var(--line); }
+.timeline li { display: grid; grid-template-columns: 3.4rem 1fr; gap: 0.5rem; padding: 0.3rem 0 0.3rem 0.6rem; position: relative; }
+.timeline li::before { content: ''; position: absolute; left: -6px; top: 0.75rem; width: 10px; height: 10px; border-radius: 50%; background: #efb45f; border: 1px solid #3b2e22; }
+.timeline .yr { font-family: var(--serif); font-weight: 600; color: #5a4632; }
+.timeline .kind { margin-left: 0.4rem; }
+.house .docs { margin-top: 0.6rem; }
+.lived { margin: 0.6rem 0; }
+@media (max-width: 760px) { .place-top { grid-template-columns: 1fr; } }

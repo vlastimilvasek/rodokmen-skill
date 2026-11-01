@@ -2,7 +2,7 @@
 """Export dat rodokmenu (data/*) do webu ve složce web/.
 
 Čte data/osoby.py, data/zaznamy.json, data/svazky.json, data/prepisy.json, data/zvyrazneni.json,
-data/mista.json, data/web.json, data/dokumenty.json a markdownové poznámky. Zapisuje
+data/mista.json (+ texty míst data/mista/<slug>.md), data/web.json, data/dokumenty.json a markdownové poznámky. Zapisuje
 web/src/data/site.json, web/src/generated/*, web/public/{img,zdroje}, web/public/prihlaseni.html,
 web/nginx.conf a web/netlify/edge-functions/brana.js.
 
@@ -183,6 +183,83 @@ def login_files(cfg):
     return bool(answer)
 
 
+HOUSE = re.compile(r"(?:\bč\.\s*p\.|\bčp\.|\bč\.|N°|\bNo\.)\s*(\d+)")
+EVENT = {"*": "narození", "~": "křest", "×": "sňatek", "†": "úmrtí"}
+MISTA_MD = os.path.join(DATA, "mista")     # data/mista/<slug>.md – historie obce, úryvky z kronik (volitelné)
+
+
+def fact_year(text):
+    m = re.search(r"\b(1[4-9]\d\d|20\d\d)\b", text)
+    return int(m.group(1)) if m else None
+
+
+def build_places(people, docs_cfg):
+    """Místa z data/mista.json: kdo tam žil (podle faktů osob), domy (čísla popisná ve faktech) a obrázky.
+
+    Fakt patří k místu, když v něm je výraz `re` místa; číslo domu se bere za názvem obce („Komín č. 17“, „čp. 112“).
+    Rok je první letopočet ve faktu; fakt bez roku se ukáže bez data (řadí se podle let života osoby).
+    """
+    places = []
+    for name, e in jload("mista.json", {}).items():
+        if "lat" not in e:
+            continue
+        rx = re.compile(e.get("re") or re.escape(name))
+        slug = slugify(name)
+        residents, houses = [], {}
+        for p in sorted(people.values(), key=lambda p: p["k"]):
+            facts = []
+            for f in p["facts"]:
+                m = rx.search(f)
+                if not m:
+                    continue
+                h = HOUSE.search(f, m.end()) or None
+                ev = re.match(r"^(?:\d\.\s*)?([*~×†])", f)
+                facts.append(dict(text=f, year=fact_year(f), house=h.group(1) if h else None,
+                                  kind=EVENT.get(ev.group(1), "") if ev else ""))
+            if not facts:
+                continue
+            yrs = [x["year"] for x in facts if x["year"]]
+            life = [int(y) for y in re.findall(r"\b(?:1[4-9]\d\d|20\d\d)\b", p["y"] or "")]
+            hs = list(dict.fromkeys(x["house"] for x in facts if x["house"]))
+            residents.append(dict(slug=p["slug"], line=p["line"] or 0, facts=facts, houses=hs,
+                                  span=[min(yrs), max(yrs)] if yrs else None,
+                                  sort=min(yrs) if yrs else (life[0] if life else 9999)))
+            for x in facts:
+                if x["house"]:
+                    houses.setdefault(x["house"], []).append(dict(slug=p["slug"], year=x["year"], text=x["text"], kind=x["kind"],
+                                                                  sort=x["year"] or (life[0] if life else 9999)))
+        residents.sort(key=lambda r: (r["sort"], people[r["slug"]]["k"]))
+        byline = {}
+        for r in residents:
+            byline.setdefault(r["line"], []).append(r["slug"])
+        if e.get("hypoteza"):
+            byline = {e.get("rod", 0): []}
+        if not byline:
+            continue
+        yrs = [int(y) for r in residents for y in re.findall(r"\b1[4-9]\d\d\b", people[r["slug"]]["y"] or "")]
+        desc_h = e.get("domy") or {}
+        for num in desc_h:
+            houses.setdefault(str(num), [])
+        house_list = []
+        for num in sorted(houses, key=lambda n: int(n) if n.isdigit() else 10 ** 6):
+            d = desc_h.get(num) or {}
+            d = {"popis": d} if isinstance(d, str) else d
+            ev = sorted(houses[num], key=lambda x: (x["sort"], people[x["slug"]]["k"]))
+            house_list.append(dict(num=num, desc=d.get("popis", ""), today=d.get("dnes", ""), events=ev,
+                                   docs=[x["img"] for x in docs_cfg if x.get("misto") == name and str(x.get("dum", "")) == num]))
+        for r in residents:
+            people[r["slug"]].setdefault("places", []).append(dict(slug=slug, name=name, houses=r["houses"], sort=r["sort"]))
+        md = os.path.join(MISTA_MD, slug + ".md")
+        places.append(dict(name=name, slug=slug, lat=e["lat"], lon=e["lon"], lines=[dict(k=k, people=v) for k, v in sorted(byline.items())],
+                           years=[min(yrs), max(yrs)] if yrs else None, hypothesis=bool(e.get("hypoteza")),
+                           desc=e.get("popis", ""), photo=e.get("foto", ""), photoCaption=e.get("foto_popis", ""),
+                           residents=residents, houses=house_list, hasText=os.path.exists(md),
+                           docs=[x["img"] for x in docs_cfg if x.get("misto") == name]))
+    for p in people.values():
+        p["places"] = sorted(p.get("places", []), key=lambda x: x["sort"])
+    return places
+
+
 def main():
     ns = load_people()
     P, LINES, SIDE, ISSUES = ns["P"], ns["LINES"], ns["SIDE"], ns["ISSUES"]
@@ -236,7 +313,7 @@ def main():
             child=slugs.get(k // 2) if k > 1 else None, spouse=slugs.get(k ^ 1) if k > 1 else None,
             family=None, ownFamily=None, path=path,
             side=[dict(name=s["n"], text=s["t"], records=[r for r in s.get("r", []) if r in recs]) for s in SIDE if s["k"] == k],
-            docs=[dict(img=d["img"], caption=d["popis"]) for d in docs_cfg if k in d.get("osoby", [])],
+            docs=[dict(img=d["img"], caption=d["popis"], source=d.get("zdroj", "")) for d in docs_cfg if k in d.get("osoby", [])],
             children=[slugs[c] for c in [k // 2] + [a // 2 for a in aliases_of.get(k, [])] if k > 1 and c in slugs],
             also=[dict(k=a, rel=relation(a), line=line_of(a), child=slugs.get(a // 2)) for a in aliases_of.get(k, [])],
         )
@@ -302,22 +379,7 @@ def main():
     for p in people.values():
         p["lineSlug"] = next((l["slug"] for l in lines.values() if l["k"] == p["line"]), None)
 
-    places = []
-    for name, e in jload("mista.json", {}).items():
-        if "lat" not in e:
-            continue
-        rx = re.compile(e.get("re") or re.escape(name))
-        hits = [p for p in people.values() if rx.search(" ".join(p["facts"]))]
-        byline = {}
-        for p in sorted(hits, key=lambda p: p["k"]):
-            byline.setdefault(p["line"] or 0, []).append(p["slug"])
-        if e.get("hypoteza"):
-            byline = {e.get("rod", 0): []}
-        if not byline:
-            continue
-        yrs = [int(y) for p in hits for y in re.findall(r"\b1[4-9]\d\d\b", p["y"] or "")]
-        places.append(dict(name=name, lat=e["lat"], lon=e["lon"], lines=[dict(k=k, people=v) for k, v in sorted(byline.items())],
-                           years=[min(yrs), max(yrs)] if yrs else None, hypothesis=bool(e.get("hypoteza"))))
+    places = build_places(people, docs_cfg)
 
     known = [p for p in people.values() if p["k"] > 1]
     stats = dict(ancestors=len(known), documented=sum(p["st"] == "doc" for p in known), records=len(records),
@@ -332,7 +394,9 @@ def main():
     site = dict(config=public_cfg, places=places, root=slugs[1], aliases={a: slugs[a] for a in SAME}, people=people,
                 families=families, records=records, lines=lines,
                 issues=[dict(title=i, text="") if isinstance(i, str) else dict(title=i[0], text=i[1]) for i in ISSUES], stats=stats, hypotheses=hypotheses,
-                docs=[dict(img=d["img"], caption=d["popis"], people=[slugs[k] for k in d.get("osoby", []) if k in slugs])
+                docs=[dict(img=d["img"], caption=d["popis"], people=[slugs[k] for k in d.get("osoby", []) if k in slugs],
+                           place=slugify(d["misto"]) if d.get("misto") else None, house=str(d.get("dum", "")) or None,
+                           year=d.get("rok"), source=d.get("zdroj", ""))
                       for d in docs_cfg if os.path.exists(os.path.join(VYREZY, d["img"] + ".jpg"))])
 
     write(os.path.join(WEB, "src", "data", "site.json"), json.dumps(site, ensure_ascii=False, indent=1))
@@ -341,6 +405,13 @@ def main():
         path = os.path.join(DATA, src)
         text = open(path, encoding="utf-8").read() if os.path.exists(path) else ""
         write(os.path.join(gen_dir, dst), strip_comments(re.sub(r"^# .*\n", "", text, count=1)))
+    mista_dir = os.path.join(gen_dir, "mista")   # texty míst: celé znovu, ať nezůstanou smazané
+    shutil.rmtree(mista_dir, ignore_errors=True)
+    os.makedirs(mista_dir, exist_ok=True)
+    for pl in places:
+        if pl["hasText"]:
+            text = open(os.path.join(MISTA_MD, pl["slug"] + ".md"), encoding="utf-8").read()
+            write(os.path.join(mista_dir, pl["slug"] + ".md"), strip_comments(re.sub(r"^# .*\n", "", text, count=1)))
     story = os.path.join(DATA, "pribeh.md")
     write(os.path.join(gen_dir, "pribeh.md"), strip_comments(open(story, encoding="utf-8").read()) if has_story else "---\ntitle: Příběh\nlead: ''\n---\n")
 
@@ -357,7 +428,8 @@ def main():
     for sub, src_dir in (("img", VYREZY), ("zdroje", ZDROJE)):
         dst_dir = os.path.join(WEB, "public", sub)
         os.makedirs(dst_dir, exist_ok=True)
-        for key in list(recs) + [d["img"] for d in docs_cfg] + ([cfg["uvod"]["foto"]] if cfg.get("uvod", {}).get("foto") else []):
+        for key in list(recs) + [d["img"] for d in docs_cfg] + [pl["photo"] for pl in places if pl["photo"]] + \
+                ([cfg["uvod"]["foto"]] if cfg.get("uvod", {}).get("foto") else []):
             src = os.path.join(src_dir, key + ".jpg")
             dst = os.path.join(dst_dir, key + ".jpg")
             if not os.path.exists(src):
@@ -376,12 +448,14 @@ def main():
           f"zkopírováno {copied} obrázků; přihlášení {'zapnuté' if gated else 'VYPNUTÉ (web je otevřený)'}")
 
     # odkazy v textech, které nikam nevedou (adresa osoby se změní třeba doplněním roku narození: jan-novak → jan-novak-1798)
-    targets = dict(osoba=people, zdroj=recs, rod=lines, rodina=families)
+    targets = dict(osoba=people, zdroj=recs, rod=lines, rodina=families, misto={pl["slug"]: pl for pl in places})
     texts = {f: open(os.path.join(gen_dir, f), encoding="utf-8").read() for f in ("pribeh.md", "zajimavosti.md")}
+    texts.update({f"mista/{pl['slug']}.md": open(os.path.join(mista_dir, pl["slug"] + ".md"), encoding="utf-8").read()
+                  for pl in places if pl["hasText"]})
     texts["web.json"] = json.dumps(cfg, ensure_ascii=False)
     texts["osoby.py (hypotézy)"] = json.dumps(hypotheses, ensure_ascii=False)
     broken = [(f, m.group(0)) for f, t in texts.items()
-              for m in re.finditer(r"/(osoba|zdroj|rod|rodina)/([^/\s)\"'#?<>\]]+)", t) if m.group(2) not in targets[m.group(1)]]
+              for m in re.finditer(r"/(osoba|zdroj|rod|rodina|misto)/([^/\s)\"'#?<>\]]+)", t) if m.group(2) not in targets[m.group(1)]]
     for f, link in dict.fromkeys(broken):
         print(f"POZOR: nefunkční odkaz {link}/ v {f} – oprav ho (adresy stránek jsou ve web/src/data/site.json)")
 
