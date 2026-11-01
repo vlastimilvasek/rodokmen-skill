@@ -227,7 +227,7 @@ def build_places(people, docs_cfg):
             for x in facts:
                 if x["house"]:
                     houses.setdefault(x["house"], []).append(dict(slug=p["slug"], year=x["year"], text=x["text"], kind=x["kind"],
-                                                                  sort=x["year"] or (life[0] if life else 9999)))
+                                                                  sort=x["year"] or (min(yrs) if yrs else life[0] if life else 9999)))
         residents.sort(key=lambda r: (r["sort"], people[r["slug"]]["k"]))
         byline = {}
         for r in residents:
