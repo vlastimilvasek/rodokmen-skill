@@ -145,6 +145,21 @@ Adresy u nevyzkoušených portálů ověř při prvním použití (portály se m
 - **Indikační skici stabilního katastru** (1824–1843, čísla domů červeně, u pozemků jména držitelů „Waschek Mathias N° 17“)
   má MZA na `https://www.mza.cz/indikacniskici/` (vyhledání podle katastru; německý název obce, např. „Komein“).
   Výborné pro stránku místa a domu (viz `reference/mista.md`). Archiv ČÚZK (ags.cuzk.gov.cz/archiv) má totéž pro Čechy.
+- **Obce, které byly do roku 1920 v Dolních Rakousích** (Valticko: Valtice/Feldsberg, Hlohovec/Bischofswarth,
+  Poštorná/Unter-Themenau, Charvátská Nová Ves/Ober-Themenau, Úvaly/Garschönthal…, i část Vitorazska) indikační skici
+  v MZA nemají. Rakouský stabilní katastr („Franziszeischer Kataster“, kolem 1821) je online v **NÖ Landesarchiv**:
+  `https://www.noela.findbuch.net/` (hledej německý název obce):
+  - **FK Mappen UM <č.>**: barevná mapa obce, asi 5600 × 4600 px. Stavební parcely jsou černě, pozemky červeně.
+    Čísla domů ani jména na mapě nejsou.
+  - **FK Prot UM <č.>** (protokol stavebních parcel): u každé parcely majitel, stav (Halblehner = půlláník, Häusler =
+    domkář), bydliště a **číslo domu**. Číslo parcely z mapy tedy vede k domu a jeho majiteli.
+  - **BG <okresní soud> …**: pozemkové knihy (Grundbuch, Gewährbuch od 18. stol.) a pozůstalostní inventáře
+    (Inventurprotokolle), často naskenované. Kdo kdy držel dům.
+  - Stažení bez prohlížeče: cookie z `https://www.noela.findbuch.net/php/view.php?link=…`, pak
+    `php/gtpc.php?be_id=<fond>&ve_id=<id>&count=<0..n>` (fond 4092 = mapy, 4091 = Prot, 4094 = Operate; prázdná
+    odpověď = konec nebo bez skenů). `id` vrátí hledání `php/rech_start.php?rech_nr=1` (POST `words=<obec>&max=500&…`,
+    po načtení `main.php`; výsledek je JSON, signatura je v klíči zakódovaná hexadecimálně). Server s obrázky
+    `augias.noel.gv.at` přímo nedostupný, jen přes `gtpc.php`.
 
 ## Pražské policejní přihlášky 1850–1914 (Národní archiv) – `tools/policie_prihlasky.py`
 - Karty pražských rodin: hlava rodiny, manželka s rokem a místem narození, děti s roky, adresy, někdy místo sňatku.
