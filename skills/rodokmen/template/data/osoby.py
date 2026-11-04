@@ -27,6 +27,7 @@ LINES = {
 
 # Příbuzní mimo přímou linii (sourozenci, strýcové…): k = číslo předka, ke kterému patří.
 # dict(k=16, n="Josef Novák (1865–1920)", t="Bratr Jana. Kovář v …", r=["klic_zapisu"])
+# Kdo není sourozencem předka k (sestřenice, neteř…), dostane sour=False – na stránce rodiny pak není mezi dětmi.
 SIDE = [
 ]
 

@@ -70,6 +70,31 @@ def slugify(text):
     return re.sub(r"[^a-z0-9]+", "-", t).strip("-")
 
 
+DATE_RE = re.compile(r"(\d{1,2})\.\s*(\d{1,2})\.\s*(1[4-9]\d\d)")
+
+
+def birth_key(texts, rec_keys, recs, fallback=""):
+    """Řadicí klíč narození (rrrrmmdd): křestní zápis → datum za */~/narozen v textu → první rok."""
+    for r in rec_keys:
+        if r in recs and recs[r]["kind"] == "N":
+            m = DATE_RE.search(recs[r]["date"])
+            if m:
+                return int(m[3]) * 10000 + int(m[2]) * 100 + int(m[1])
+    for t in texts:
+        for m in DATE_RE.finditer(t):
+            if re.search(r"(\*|~|[Nn]arozen|[Pp]okřtěn)[^.;]{0,25}$", t[max(0, m.start() - 30):m.start()]):
+                return int(m[3]) * 10000 + int(m[2]) * 100 + int(m[1])
+    for t in [texts[0], fallback]:   # jen rok – ze jména (texts[0]) nebo pole „y“; text se nepoužije (roky sňatků, úmrtí dětí…)
+        m = re.search(r"(\*|×|†)?\s*\b(1[4-9]\d\d)\b", t or "")
+        if m and m[1] != "†":   # u sňatku odhad narození o 25 let dřív, samotné úmrtí neřadí
+            return (int(m[2]) - (25 if m[1] == "×" else 0)) * 10000
+    for t in texts[1:]:
+        m = re.search(r"\*\s*(1[4-9]\d\d)\b", t)
+        if m:
+            return int(m[1]) * 10000
+    return 99999999
+
+
 def norm_answer(text):
     """Stejná normalizace jako v prihlaseni.html: bez diakritiky, malá písmena, jen a-z0-9."""
     t = unicodedata.normalize("NFD", text)
@@ -296,6 +321,15 @@ def main():
         g = gen(k)
         return k >> (g - 3) if g >= 3 else None
 
+    side_of, rel_used = {}, set()          # příbuzní mimo linii – každý má vlastní stránku /pribuzny/<slug>/
+    for e in SIDE:
+        base = slugify(re.sub(r"[–(),?„“]|provd\.", " ", e["n"])) or "pribuzny"
+        rs = base if base not in rel_used else f"{base}-{len(rel_used)}"
+        rel_used.add(rs)
+        rr = [r for r in e.get("r", []) if r in recs]
+        side_of[id(e)] = dict(slug=rs, name=e["n"], text=e["t"], records=rr, sib=e.get("sour", True),
+                              of=slugs.get(e["k"]), sort=birth_key([e["n"], e["t"]], rr, recs))
+
     people = {}
     for k, p in sorted(P.items()):
         if k not in slugs or k in SAME:
@@ -312,10 +346,11 @@ def main():
             fatherUnknown=(2 * k in P and placeholder(P[2 * k])), motherUnknown=(2 * k + 1 in P and placeholder(P[2 * k + 1])),
             child=slugs.get(k // 2) if k > 1 else None, spouse=slugs.get(k ^ 1) if k > 1 else None,
             family=None, ownFamily=None, path=path,
-            side=[dict(name=s["n"], text=s["t"], records=[r for r in s.get("r", []) if r in recs]) for s in SIDE if s["k"] == k],
+            side=[side_of[id(s)] for s in SIDE if s["k"] == k],
             docs=[dict(img=d["img"], caption=d["popis"], source=d.get("zdroj", "")) for d in docs_cfg if k in d.get("osoby", [])],
             children=[slugs[c] for c in [k // 2] + [a // 2 for a in aliases_of.get(k, [])] if k > 1 and c in slugs],
             also=[dict(k=a, rel=relation(a), line=line_of(a), child=slugs.get(a // 2)) for a in aliases_of.get(k, [])],
+            sort=birth_key([p.get("y", "")] + p.get("f", []), p.get("r", []), recs),
         )
         if aliases_of.get(k):
             for a in aliases_of[k]:
@@ -391,7 +426,11 @@ def main():
     has_story = os.path.exists(os.path.join(DATA, "pribeh.md"))
     public_cfg = {k: v for k, v in cfg.items() if k != "prihlaseni"}
     public_cfg["maPribeh"] = has_story
-    site = dict(config=public_cfg, places=places, root=slugs[1], aliases={a: slugs[a] for a in SAME}, people=people,
+    relatives = {}
+    for e in side_of.values():
+        if e["of"] in people:
+            relatives[e["slug"]] = dict(e, family=people[e["of"]]["family"])
+    site = dict(relatives=relatives, config=public_cfg, places=places, root=slugs[1], aliases={a: slugs[a] for a in SAME}, people=people,
                 families=families, records=records, lines=lines,
                 issues=[dict(title=i, text="") if isinstance(i, str) else dict(title=i[0], text=i[1]) for i in ISSUES], stats=stats, hypotheses=hypotheses,
                 docs=[dict(img=d["img"], caption=d["popis"], people=[slugs[k] for k in d.get("osoby", []) if k in slugs],

@@ -59,9 +59,9 @@ const path = [...p.path].reverse().filter(Boolean);
       <h2>Příbuzní mimo přímou linii</h2>
       <div class="grid2">
         {p.side.map((s) => (
-          <div class="card"><h3>{s.name}</h3><p class="small">{s.text}</p>
-            {s.records.length > 0 && <p class="small">Zápisy: {s.records.filter((r) => records[r]).map((r, i) => <>{i > 0 && ' · '}<a href={href.record(r)}>{records[r].date}</a></>)}</p>}
-          </div>
+          <a class="card card-link" href={href.relative(s.slug)}><h3>{s.name}</h3><p class="small">{s.text}</p>
+            {s.records.length > 0 && <p class="small muted">{s.records.length} {s.records.length === 1 ? 'zápis' : s.records.length < 5 ? 'zápisy' : 'zápisů'} z matrik</p>}
+          </a>
         ))}
       </div>
     </>

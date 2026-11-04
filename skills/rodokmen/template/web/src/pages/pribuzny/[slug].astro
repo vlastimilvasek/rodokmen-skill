@@ -1,0 +1,45 @@
+---
+import Base from '../../layouts/Base.astro';
+import PersonLink from '../../components/PersonLink.astro';
+import Record from '../../components/Record.astro';
+import { people, relatives, families, records, dateKey, href, birthLabel } from '../../lib/data.js';
+
+export function getStaticPaths() {
+  return Object.keys(relatives).map((slug) => ({ params: { slug } }));
+}
+const r = relatives[Astro.params.slug];
+const anc = people[r.of];
+const fam = r.family ? families[r.family] : null;
+const recs = [...new Set(r.records)].filter((k) => records[k]).sort((a, b) => dateKey(records[a].date) - dateKey(records[b].date));
+const siblings = fam ? fam.side.filter((s) => s.sib && s.slug !== r.slug) : [];
+---
+<Base title={r.name} description={r.text}>
+  <p class="crumbs">{fam ? <a href={href.family(fam.id)}>Rodina</a> : 'Příbuzní'} · {r.sib ? 'sourozenec předka' : 'příbuzný mimo přímou linii'}</p>
+  <h1>{r.name}</h1>
+  <div class="chips">
+    {birthLabel(r.sort) && <span class="chip">{birthLabel(r.sort)}</span>}
+    <span class="chip">{r.sib ? <>sourozenec – {anc.sex === 'M' ? 'bratr' : 'sestra'} je náš předek</> : 'příbuzný'}</span>
+  </div>
+  <p>{r.text}</p>
+
+  <h2>Rodina</h2>
+  <div class="grid2">
+    {r.sib && fam && (
+      <div class="card">
+        <h3>Rodiče</h3>
+        <p>Otec: {fam.father ? <PersonLink slug={fam.father} /> : <span class="muted">neznámý</span>}<br />
+          Matka: {fam.mother ? <PersonLink slug={fam.mother} /> : <span class="muted">neznámá</span>}</p>
+        <p class="small"><a href={href.family(fam.id)}>Celá rodina a sourozenci →</a></p>
+      </div>
+    )}
+    <div class="card">
+      <h3>{r.sib ? 'Sourozenec v přímé linii' : 'Příbuzný předek'}</h3>
+      <p><PersonLink slug={anc.slug} /><br /><span class="small muted">{anc.rel}</span></p>
+      {siblings.length > 0 && <p class="small">Další sourozenci: {siblings.map((s, i) => <>{i > 0 && ', '}<a href={href.relative(s.slug)}>{s.name}</a></>)}</p>}
+    </div>
+  </div>
+
+  <h2>Zápisy z matrik</h2>
+  {recs.length ? <div class="recs">{recs.map((k) => <Record id={k} showPeople exclude={r.of} />)}</div>
+    : <p class="muted">Vlastní matriční zápis zatím nemáme – údaje pocházejí z poznámek u předka.</p>}
+</Base>

@@ -1,7 +1,7 @@
 // Data exported from the research repo by tools/export_web.py (re-run `npm run data` after changes).
 import site from '../data/site.json';
 
-export const { people, families, lines, stats, issues, hypotheses, docs, config } = site;
+export const { people, families, relatives = {}, lines, stats, issues, hypotheses, docs, config } = site;
 /** Počet rodů slovem pro nadpisy („Osm rodů“). */
 export const linesTitle = (n) => (['Žádný rod', 'Jeden rod', 'Dva rody', 'Tři rody', 'Čtyři rody', 'Pět rodů', 'Šest rodů', 'Sedm rodů', 'Osm rodů'][n] ?? `${n} rodů`);
 export const root = people[site.root];
@@ -22,6 +22,7 @@ export const href = {
   line: (slug) => `/rod/${slug}/`,
   record: (key) => `/zdroj/${key}/`,
   place: (slug) => `/misto/${slug}/`,
+  relative: (slug) => `/pribuzny/${slug}/`,
 };
 
 /** Rozpětí let pro přehledy: [1772, 1830] → „1772–1830“, [1905, 1905] → „1905“. */
@@ -39,3 +40,6 @@ export const genName = (g) =>
   ['výchozí osoba', 'rodiče', 'prarodiče', 'praprarodiče'][g] ?? `${g}. generace (${'pra'.repeat(g - 1)}rodiče)`;
 
 export const statusClass = (st) => ({ doc: 'st-doc', prob: 'st-prob', fam: 'st-fam', mh: 'st-mh' })[st] ?? 'st-unk';
+
+/** Krátký popisek narození z řadicího klíče rrrrmmdd: 18900601 → „* 1. 6. 1890“, 18920000 → „* 1892“. */
+export const birthLabel = (k) => (!k || k >= 99999999 ? '' : `* ${k % 100 ? `${k % 100}. ${Math.floor(k / 100) % 100}. ` : ''}${Math.floor(k / 10000)}`);

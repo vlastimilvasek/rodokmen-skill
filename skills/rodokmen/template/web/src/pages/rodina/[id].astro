@@ -2,7 +2,7 @@
 import Base from '../../layouts/Base.astro';
 import PersonLink from '../../components/PersonLink.astro';
 import Record from '../../components/Record.astro';
-import { people, families, lineByK, records, href } from '../../lib/data.js';
+import { people, families, lineByK, records, href, birthLabel } from '../../lib/data.js';
 
 export function getStaticPaths() {
   return Object.keys(families).map((id) => ({ params: { id } }));
@@ -11,6 +11,14 @@ const f = families[Astro.params.id];
 const father = f.father ? people[f.father] : null;
 const mother = f.mother ? people[f.mother] : null;
 const children = f.children.map((s) => people[s]);
+// děti: přímí předci + sourozenci, chronologicky podle narození
+const kids = [
+  ...children.map((c) => ({ ancestor: true, slug: c.slug, name: c.name, years: c.years, sort: c.sort, url: href.person(c.slug),
+    text: c.facts.slice(0, 3).join(' · '), rel: c.rel, nrec: c.records.length })),
+  ...f.side.filter((s) => s.sib).map((s) => ({ ancestor: false, slug: s.slug, name: s.name, sort: s.sort, url: href.relative(s.slug),
+    text: s.text, nrec: s.records.length })),
+].sort((a, b) => a.sort - b.sort);
+const others = f.side.filter((s) => !s.sib);
 const line = f.line ? lineByK[f.line] : null;
 const title = [father?.name ?? (f.fatherUnknown ? 'otec neuveden' : 'neznámý otec'), mother?.name ?? 'neznámá matka'].join(' a ');
 ---
@@ -41,13 +49,22 @@ const title = [father?.name ?? (f.fatherUnknown ? 'otec neuveden' : 'neznámý o
   )}
 
   <h2>Děti</h2>
-  <ul class="facts">
-    {children.map((c) => <li><PersonLink slug={c.slug} /> – přímý předek ({c.rel})</li>)}
-  </ul>
-  {f.side.length > 0 && (
-    <div class="grid2">{f.side.map((s) => <div class="card"><h3>{s.name}</h3><p class="small">{s.text}</p></div>)}</div>
-  )}
+  <div class="kids">
+    {kids.map((c) => (
+      <a class={`card card-link kid${c.ancestor ? ' kid-anc' : ''}`} href={c.url}>
+        <h3>{c.name}{c.years && <span class="yrs"> {c.years}</span>}</h3>
+        <p class="small kid-meta">{c.ancestor ? <strong>přímý předek – {c.rel}</strong> : 'sourozenec'}{birthLabel(c.sort) && <> · {birthLabel(c.sort)}</>}{c.nrec > 0 && <> · {c.nrec} {c.nrec === 1 ? 'zápis' : c.nrec < 5 ? 'zápisy' : 'zápisů'}</>}</p>
+        {c.text && <p class="small">{c.text}</p>}
+      </a>
+    ))}
+  </div>
   <p class="small muted">Další sourozence zatím systematicky nehledáme – tady jsou jen ti, na které jsme narazili.</p>
+  {others.length > 0 && (
+    <>
+      <h2>Další příbuzní</h2>
+      <div class="grid2">{others.map((s) => <a class="card card-link" href={href.relative(s.slug)}><h3>{s.name}</h3><p class="small">{s.text}</p></a>)}</div>
+    </>
+  )}
 
   {f.records.length > 0 && (
     <>
