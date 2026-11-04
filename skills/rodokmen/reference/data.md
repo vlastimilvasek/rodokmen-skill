@@ -34,7 +34,7 @@ P = {
   `fam` od rodiny (i strom, který si rodina vede sama, např. GEDCOM z jejího MyHeritage), `mh` cizí strom z internetu, `unk`.
 - `LINES = {8: ("Novákové", "Kováři z Holic…"), …}` – jen čísla 8–15; název rodu = příjmení v množném čísle.
 - `SIDE` – sourozenci a další příbuzní: `dict(k=<číslo předka>, n="Josef Novák (1865–1920)", t="text", r=[klíče])`. `k` je předek, jehož je příbuzný **sourozencem**; kdo sourozencem není (sestřenice, neteř…), dostane navíc `sour=False`.
-  Na webu má každý záznam vlastní stránku `/pribuzny/<slug>/` se zápisy; sourozenci se na stránce rodiny řadí s předkem chronologicky podle narození (z křestního zápisu, data za „*“ v textu, nebo roku ve jméně – proto do `n` dávejte „(* 1890)“).
+  Na webu má každý záznam vlastní stránku `/pribuzny/<slug>/` se zápisy; sourozenci se na stránce rodiny řadí s předkem chronologicky podle narození (z křestního zápisu, data za „*“ v textu, nebo roku ve jméně – proto do `n` dávejte „(* 1890)“); datum pro řazení lze zadat i klíčem `nar="10. 10. 1852"` – hodí se pro souhrnné karty typu „nevlastní sourozenci“).
 - `ISSUES` – dvojice `("Otázka", "Vyřešeno: … / Hypotéza: … / Otevřené: …")` → stránka „Co hledáme“ (vyřešené se skryjí).
   Jde na web – nepiš sem citlivé věci (příčiny úmrtí, rodinné spory) bez souhlasu.
 - `HYPOTEZY` – `dict(rod=8, nadpis="…", text="…", polozky=[("jméno", "text")], zaznamy=[klíče])` → stránka rodu.

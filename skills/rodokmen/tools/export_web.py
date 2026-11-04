@@ -328,7 +328,7 @@ def main():
         rel_used.add(rs)
         rr = [r for r in e.get("r", []) if r in recs]
         side_of[id(e)] = dict(slug=rs, name=e["n"], text=e["t"], records=rr, sib=e.get("sour", True),
-                              of=slugs.get(e["k"]), sort=birth_key([e["n"], e["t"]], rr, recs))
+                              of=slugs.get(e["k"]), sort=birth_key(["* " + e["nar"]], [], recs) if e.get("nar") else birth_key([e["n"], e["t"]], rr, recs))
 
     people = {}
     for k, p in sorted(P.items()):
@@ -350,7 +350,7 @@ def main():
             docs=[dict(img=d["img"], caption=d["popis"], source=d.get("zdroj", "")) for d in docs_cfg if k in d.get("osoby", [])],
             children=[slugs[c] for c in [k // 2] + [a // 2 for a in aliases_of.get(k, [])] if k > 1 and c in slugs],
             also=[dict(k=a, rel=relation(a), line=line_of(a), child=slugs.get(a // 2)) for a in aliases_of.get(k, [])],
-            sort=birth_key([p.get("y", "")] + p.get("f", []), p.get("r", []), recs),
+            sort=birth_key([p.get("y", "")] + [x for x in p.get("f", []) if x.lstrip().startswith(("*", "~"))], [], recs),   # jen vlastní údaje – v r jsou i křty dětí
         )
         if aliases_of.get(k):
             for a in aliases_of[k]:
