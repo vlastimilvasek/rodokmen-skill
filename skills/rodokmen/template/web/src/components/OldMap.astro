@@ -1,0 +1,78 @@
+---
+// Stará mapa (indikační skica, katastr…) průhledně přes dnešní mapu – Leaflet. Data z data/stare_mapy.json
+// (narovnává tools/georef.py při `npm run data`). Podklad: OpenStreetMap, ortofoto ČÚZK a – je-li klíč
+// v .mapy_api_klic – i Mapy.com (základní, letecká, turistická).
+import 'leaflet/dist/leaflet.css';
+import site from '../data/site.json';
+const { map: m, height = '560px' } = Astro.props;
+const payload = JSON.stringify({ m, key: site.mapyKey || '' });
+---
+<figure class="oldmap">
+  <div class="oldmap-map" style={`height:${height}`} data-old={payload}></div>
+  <div class="oldmap-bar">
+    <label>Stará mapa <input type="range" min="0" max="100" value="70" class="oldmap-op" /></label>
+    <label><input type="checkbox" class="oldmap-pins" checked /> domy</label>
+    <label><input type="checkbox" class="oldmap-anch" /> záchytné body</label>
+  </div>
+  <figcaption class="small">
+    <strong>{m.year} · {m.title}</strong> přes dnešní mapu. Mapa je napasovaná podle {m.points} záchytných bodů
+    (kostely, brány…), průměrná odchylka asi {m.error} m – polohy domů berte jako přibližné.
+    {m.source && <span class="src"> Zdroj: {m.source}</span>}
+  </figcaption>
+</figure>
+
+<script>
+  import L from 'leaflet';
+  const esc = (v: unknown) => String(v ?? '').replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
+  for (const el of document.querySelectorAll<HTMLElement>('.oldmap-map')) {
+    const { m, key } = JSON.parse(el.dataset.old!);
+    const fig = el.closest('.oldmap')!;
+    const map = L.map(el, { scrollWheelZoom: false, maxZoom: 20 });
+    el.addEventListener('wheel', (e) => {            // přiblížení jen s Ctrl/⌘, ať stránka dál roluje
+      if (!(e.ctrlKey || e.metaKey)) return;
+      e.preventDefault();
+      map.setZoomAround(map.mouseEventToContainerPoint(e as unknown as MouseEvent), map.getZoom() + (e.deltaY < 0 ? 1 : -1));
+    }, { passive: false });
+    const osm = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 20, maxNativeZoom: 19,
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' });
+    const orto = L.tileLayer('https://ags.cuzk.gov.cz/arcgis1/rest/services/ORTOFOTO_WM/MapServer/tile/{z}/{y}/{x}', { maxZoom: 20, maxNativeZoom: 20,
+      attribution: 'Ortofoto &copy; <a href="https://cuzk.gov.cz">ČÚZK</a>' });
+    const base: Record<string, L.TileLayer> = { 'OpenStreetMap': osm, 'Letecký snímek (ČÚZK)': orto };
+    if (key) {
+      const mc = (set: string) => L.tileLayer(`https://api.mapy.com/v1/maptiles/${set}/256/{z}/{x}/{y}?lang=cs&apikey=${encodeURIComponent(key)}`,
+        { maxZoom: 20, maxNativeZoom: 19, attribution: '<a href="https://api.mapy.com/copyright" target="_blank">&copy; Seznam.cz a.s. a další</a>' });
+      Object.assign(base, { 'Mapy.com – základní': mc('basic'), 'Mapy.com – letecká': mc('aerial'), 'Mapy.com – turistická': mc('outdoor') });
+      const logo = new L.Control({ position: 'bottomleft' });
+      logo.onAdd = () => { const a = L.DomUtil.create('a', 'oldmap-logo'); a.href = 'https://mapy.com/'; a.target = '_blank';
+        a.innerHTML = '<img src="https://api.mapy.com/img/api/logo.svg" alt="Mapy.com" height="30">'; return a; };
+      map.on('baselayerchange', (e: L.LayersControlEvent) => e.name.startsWith('Mapy.com') ? logo.addTo(map) : logo.remove());
+      base['Mapy.com – základní'].addTo(map); logo.addTo(map);
+    } else osm.addTo(map);
+    L.control.layers(base, {}, { collapsed: true }).addTo(map);
+    const ov = L.imageOverlay(m.img, m.bounds, { opacity: 0.7 }).addTo(map);
+    map.fitBounds(m.bounds);
+    const tips = () => el.classList.toggle('oldmap-far', map.getZoom() < 17);   // popisky domů až zblízka
+    map.on('zoomend', tips); tips();
+    fig.querySelector<HTMLInputElement>('.oldmap-op')!.addEventListener('input', (e) => ov.setOpacity(+(e.target as HTMLInputElement).value / 100));
+    const pins = L.layerGroup().addTo(map);
+    for (const h of m.houses) {
+      L.circleMarker([h.lat, h.lon], { radius: 9, color: '#1d3f8f', weight: 3, fillColor: '#fff', fillOpacity: 0.35 })
+        .bindTooltip(`č. ${esc(h.num)} ${esc(h.label)}`, { permanent: true, direction: 'right', className: 'oldmap-tip' })
+        .on('click', () => { location.hash = `dum-${h.num}`; }).addTo(pins);
+    }
+    const anch = L.layerGroup();
+    for (const a of m.anchors) L.circleMarker([a.lat, a.lon], { radius: 5, color: '#0a7a2a', weight: 2 }).bindTooltip(esc(a.label)).addTo(anch);
+    fig.querySelector<HTMLInputElement>('.oldmap-pins')!.addEventListener('change', (e) => (e.target as HTMLInputElement).checked ? pins.addTo(map) : pins.remove());
+    fig.querySelector<HTMLInputElement>('.oldmap-anch')!.addEventListener('change', (e) => (e.target as HTMLInputElement).checked ? anch.addTo(map) : anch.remove());
+  }
+</script>
+
+<style is:global>
+  .oldmap { margin: 1rem 0 1.5rem; }
+  .oldmap-map { width: 100%; border: 1px solid var(--line); border-radius: 12px; z-index: 0; }
+  .oldmap-bar { display: flex; flex-wrap: wrap; gap: 0.4rem 1.2rem; align-items: center; margin: 0.5rem 0; font-size: 0.9rem; }
+  .oldmap-bar label { display: inline-flex; align-items: center; gap: 0.4rem; cursor: pointer; }
+  .oldmap-tip { font-size: 0.78rem; padding: 1px 5px; }
+  .oldmap-far .oldmap-tip { display: none; }
+  .oldmap-logo img { display: block; }
+</style>

@@ -2,7 +2,8 @@
 import Base from '../../layouts/Base.astro';
 import PersonLink from '../../components/PersonLink.astro';
 import FamilyMap from '../../components/FamilyMap.astro';
-import { places, placeBySlug, docByImg, lineByK, href, span } from '../../lib/data.js';
+import OldMap from '../../components/OldMap.astro';
+import { places, placeBySlug, docByImg, lineByK, href, span, oldMaps } from '../../lib/data.js';
 
 export function getStaticPaths() {
   return places.map((pl) => ({ params: { slug: pl.slug } }));
@@ -14,6 +15,7 @@ const Text = texts[`../../generated/mista/${pl.slug}.md`]?.Content;
 const docs = pl.docs.map((img) => docByImg[img]).filter(Boolean);
 const inHouse = new Set(pl.houses.flatMap((h) => h.docs));
 const otherDocs = docs.filter((d) => !inHouse.has(d.img));
+const myOldMaps = oldMaps.filter((m) => m.place === pl.slug);
 ---
 <Base title={pl.name} description={`${pl.name} – kde žili naši předci`}>
   <p class="crumbs"><a href="/mista/">Místa</a></p>
@@ -37,6 +39,14 @@ const otherDocs = docs.filter((d) => !inHouse.has(d.img));
   </div>
 
   {Text && <div class="prose place-text"><Text /></div>}
+
+  {myOldMaps.length > 0 && (
+    <>
+      <h2>Stará mapa přes dnešní</h2>
+      <p class="small muted">Posuvníkem měňte průhlednost staré mapy, vpravo nahoře přepnete podklad (dnešní mapa, letecký snímek). Kroužky jsou domy předků – kliknutím přejdete na jejich popis. Přiblížení: Ctrl + kolečko.</p>
+      {myOldMaps.map((m) => <OldMap map={m} />)}
+    </>
+  )}
 
   {pl.residents.length > 0 && (
     <>
@@ -66,6 +76,7 @@ const otherDocs = docs.filter((d) => !inHouse.has(d.img));
         {pl.houses.map((h) => (
           <section class="card house" id={`dum-${h.num}`}>
             <h3>č. {h.num}{h.today && <span class="muted small"> · dnes {h.today}</span>}</h3>
+            {h.gps && <p class="small"><a href={`https://mapy.com/cs/zakladni?x=${h.gps[1]}&y=${h.gps[0]}&z=19&source=coor&id=${h.gps[1]}%2C${h.gps[0]}`} target="_blank" rel="noopener">📍 kde dům stál – na dnešní mapě (přibližně)</a></p>}
             {h.desc && <p class="small">{h.desc}</p>}
             {h.events.length > 0 && (
               <ol class="timeline">

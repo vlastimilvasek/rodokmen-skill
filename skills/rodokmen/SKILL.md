@@ -185,6 +185,8 @@ Podrobně `reference/pribehy.md`. Tohle je to, co rodina na webu čte nejradši,
   se poskládá z faktů osob sama. Když se v datech opakuje **stejné číslo domu přes generace**, nabídni uživateli
   stránku rodového domu: indikační skica stabilního katastru (jméno předka u domu!), dnešní adresa, staré mapy
   a fotky (`dokumenty.json` s `misto`, `dum`, `zdroj`), krátká historie obce a úryvky z kroniky (`data/mista/<slug>.md`).
+  Jakmile je složená indikační skica, nabídni **starou mapu přes dnešní** (`data/stare_mapy.json`, oddíl 4 v
+  `reference/mista.md`): uživatel odečte GPS 4–8 pevných bodů (kostely, brány) a web ukáže, kde domy předků stály.
 
 ## Fáze 4 – Web
 Podrobně `reference/web.md`. Ve zkratce:
@@ -242,6 +244,7 @@ Nedělej to pořád. Postup:
 | `data/prosle_knihy.md` | přehled knih a let přečtených stránku po stránce a sledovaných příjmení |
 | `data/udaje_od_rodiny.md`, `data/archivni_dotazy.md` | co víme od rodiny; co jen v archivu |
 | `data/zajimavosti.md`, `data/pribeh.md`, `data/web.json`, `data/dokumenty.json`, `data/mista.json` | texty a nastavení webu, rodinné fotky a staré mapy, místa (mapa, popis, domy) |
+| `data/stare_mapy.json` (+ `tools/georef.py`, klíč `.mapy_api_klic`) | staré mapy napasované na dnešní – překryv na stránce obce, GPS domů předků (`reference/mista.md` oddíl 4) |
 | `data/mista/<slug>.md` | text stránky místa: historie obce, úryvky z kronik (volitelné) |
 | `vyrezy/`, `zdroje/` | výřezy zápisů a dokumentů (web / plné rozlišení), název = klíč + `.jpg` |
 | `dokumenty/`, `pracovni/` | originály od rodiny; pracovní soubory (nejdou na web) |

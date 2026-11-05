@@ -285,6 +285,39 @@ def build_places(people, docs_cfg):
     return places
 
 
+def build_old_maps(places):
+    """Staré mapy z data/stare_mapy.json (tools/georef.py): narovná je na dnešní souřadnice (web/public/img/stare-mapy/<id>.webp)
+    a spočítá GPS domů. Domy se připojí k domům místa (pl.houses[].gps), aby šly ukázat na mapě."""
+    sys.path.insert(0, TOOLS)
+    import georef
+    by_name = {pl["name"]: pl for pl in places}
+    out = []
+    for m in georef.nacti():
+        try:
+            pr = georef.Prevod(m)
+        except ValueError as e:
+            print("VAROVÁNÍ – stará mapa:", e)
+            continue
+        if pr.chyba > georef.VAROVANI_M:
+            print(f"VAROVÁNÍ – stará mapa {m['id']}: střední chyba {pr.chyba:.0f} m, zkontrolujte záchytné body (python tools/georef.py)")
+        bounds = georef.narovnat(m, pr, os.path.join(WEB, "public", "img", "stare-mapy", m["id"] + ".webp"))
+        pl = by_name.get(m.get("misto"))
+        houses = []
+        for h in m.get("domy", []):
+            lat, lon = pr.gps(*h["px"])
+            houses.append(dict(num=str(h.get("cislo", "")), label=h.get("popis", ""), lat=round(lat, 6), lon=round(lon, 6)))
+            if pl:
+                for ph in pl["houses"]:
+                    if ph["num"] == str(h.get("cislo", "")):
+                        ph.setdefault("gps", [round(lat, 6), round(lon, 6)])
+        out.append(dict(id=m["id"], place=pl["slug"] if pl else None, title=m.get("nazev", ""), year=m.get("rok"),
+                        source=m.get("zdroj", ""), img=f"/img/stare-mapy/{m['id']}.webp", bounds=bounds,
+                        error=round(pr.chyba), points=len(pr.odchylky), houses=houses,
+                        anchors=[dict(label=b.get("popis", ""), lat=b["gps"][0], lon=b["gps"][1])
+                                 for b in m.get("body", []) if b.get("gps") and not b.get("vynechat")]))
+    return out
+
+
 def main():
     ns = load_people()
     P, LINES, SIDE, ISSUES = ns["P"], ns["LINES"], ns["SIDE"], ns["ISSUES"]
@@ -415,6 +448,7 @@ def main():
         p["lineSlug"] = next((l["slug"] for l in lines.values() if l["k"] == p["line"]), None)
 
     places = build_places(people, docs_cfg)
+    old_maps = build_old_maps(places)
 
     known = [p for p in people.values() if p["k"] > 1]
     stats = dict(ancestors=len(known), documented=sum(p["st"] == "doc" for p in known), records=len(records),
@@ -430,7 +464,9 @@ def main():
     for e in side_of.values():
         if e["of"] in people:
             relatives[e["slug"]] = dict(e, family=people[e["of"]]["family"])
-    site = dict(relatives=relatives, config=public_cfg, places=places, root=slugs[1], aliases={a: slugs[a] for a in SAME}, people=people,
+    key_file = os.path.join(ROOT, ".mapy_api_klic")   # klíč k Mapy.com (git ho ignoruje); bez něj jen OSM a ortofoto ČÚZK
+    mapy_key = open(key_file, encoding="utf-8").read().strip() if os.path.exists(key_file) else ""
+    site = dict(relatives=relatives, config=public_cfg, oldMaps=old_maps, mapyKey=mapy_key, places=places, root=slugs[1], aliases={a: slugs[a] for a in SAME}, people=people,
                 families=families, records=records, lines=lines,
                 issues=[dict(title=i, text="") if isinstance(i, str) else dict(title=i[0], text=i[1]) for i in ISSUES], stats=stats, hypotheses=hypotheses,
                 docs=[dict(img=d["img"], caption=d["popis"], people=[slugs[k] for k in d.get("osoby", []) if k in slugs],

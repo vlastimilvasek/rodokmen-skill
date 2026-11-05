@@ -13,6 +13,7 @@ export const byK = Object.fromEntries([
 ]);
 export const lineByK = Object.fromEntries(Object.values(lines).map((l) => [l.k, l]));
 export const places = site.places ?? [];
+export const oldMaps = site.oldMaps ?? [];
 export const placeBySlug = Object.fromEntries(places.map((pl) => [pl.slug, pl]));
 export const docByImg = Object.fromEntries((docs ?? []).map((d) => [d.img, d]));
 
