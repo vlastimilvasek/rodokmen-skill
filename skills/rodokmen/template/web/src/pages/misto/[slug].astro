@@ -28,22 +28,24 @@ const myOldMaps = oldMaps.filter((m) => m.place === pl.slug);
   </div>
   {pl.desc && <p class="lead">{pl.desc}</p>}
 
-  <div class="place-top">
-    {pl.photo && (
-      <figure class="place-photo">
-        <a href={`/img/${pl.photo}.jpg`} target="_blank" rel="noopener"><img src={`/img/${pl.photo}.jpg`} alt={pl.photoCaption || pl.name} /></a>
-        {pl.photoCaption && <figcaption>{pl.photoCaption}</figcaption>}
-      </figure>
-    )}
-    <div class="place-map"><FamilyMap focus={pl.slug} height="280px" /></div>
-  </div>
+  {myOldMaps.length === 0 && (
+    <div class="place-top">
+      {pl.photo && (
+        <figure class="place-photo">
+          <a href={`/img/${pl.photo}.jpg`} target="_blank" rel="noopener"><img src={`/img/${pl.photo}.jpg`} alt={pl.photoCaption || pl.name} /></a>
+          {pl.photoCaption && <figcaption>{pl.photoCaption}</figcaption>}
+        </figure>
+      )}
+      <div class="place-map"><FamilyMap focus={pl.slug} height="280px" /></div>
+    </div>
+  )}
 
   {Text && <div class="prose place-text"><Text /></div>}
 
   {myOldMaps.length > 0 && (
     <>
-      <h2>Stará mapa přes dnešní</h2>
-      <p class="small muted">Posuvníkem měňte průhlednost staré mapy, vpravo nahoře přepnete podklad (dnešní mapa, letecký snímek). Kroužky jsou domy předků – kliknutím přejdete na jejich popis. Přiblížení: Ctrl + kolečko.</p>
+      <h2>Překryv map</h2>
+      <p class="small muted">Posuvníkem měňte průhlednost staré mapy, vpravo nahoře přepnete podklad (dnešní mapa, letecký snímek). Kroužky jsou domy předků – kliknutím přejdete na jejich popis. Přiblížení: Ctrl + kolečko, tlačítkem ⛶ mapu zvětšíte na celé okno.</p>
       {myOldMaps.map((m) => <OldMap map={m} />)}
     </>
   )}

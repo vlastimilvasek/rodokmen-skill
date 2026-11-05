@@ -29,7 +29,7 @@ const payload = JSON.stringify({ m, key: site.mapyKey || '' });
     const fig = el.closest('.oldmap')!;
     const map = L.map(el, { scrollWheelZoom: false, maxZoom: 20 });
     el.addEventListener('wheel', (e) => {            // přiblížení jen s Ctrl/⌘, ať stránka dál roluje
-      if (!(e.ctrlKey || e.metaKey)) return;
+      if (!(e.ctrlKey || e.metaKey) || fig.classList.contains('oldmap-full')) return;
       e.preventDefault();
       map.setZoomAround(map.mouseEventToContainerPoint(e as unknown as MouseEvent), map.getZoom() + (e.deltaY < 0 ? 1 : -1));
     }, { passive: false });
@@ -49,6 +49,23 @@ const payload = JSON.stringify({ m, key: site.mapyKey || '' });
       base['Mapy.com – základní'].addTo(map); logo.addTo(map);
     } else osm.addTo(map);
     L.control.layers(base, {}, { collapsed: true }).addTo(map);
+    // celé okno: tlačítko ⛶ (Esc = zpět); v celém okně se přibližuje kolečkem i bez Ctrl
+    const full = new L.Control({ position: 'topleft' });
+    const setFull = (on: boolean) => {
+      fig.classList.toggle('oldmap-full', on); document.body.classList.toggle('oldmap-noscroll', on);
+      on ? map.scrollWheelZoom.enable() : map.scrollWheelZoom.disable();
+      btn.innerHTML = on ? '✕' : '⛶'; btn.title = on ? 'Zpět (Esc)' : 'Celé okno';
+      setTimeout(() => map.invalidateSize(), 50);
+    };
+    let btn: HTMLAnchorElement;
+    full.onAdd = () => {
+      const box = L.DomUtil.create('div', 'leaflet-bar');
+      btn = L.DomUtil.create('a', 'oldmap-fullbtn', box) as HTMLAnchorElement; btn.href = '#'; btn.innerHTML = '⛶'; btn.title = 'Celé okno';
+      L.DomEvent.on(btn, 'click', (e) => { L.DomEvent.preventDefault(e); setFull(!fig.classList.contains('oldmap-full')); });
+      L.DomEvent.disableClickPropagation(box); return box;
+    };
+    full.addTo(map);
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && fig.classList.contains('oldmap-full')) setFull(false); });
     const ov = L.imageOverlay(m.img, m.bounds, { opacity: 0.7 }).addTo(map);
     map.fitBounds(m.bounds);
     const tips = () => el.classList.toggle('oldmap-far', map.getZoom() < 17);   // popisky domů až zblízka
@@ -75,4 +92,10 @@ const payload = JSON.stringify({ m, key: site.mapyKey || '' });
   .oldmap-tip { font-size: 0.78rem; padding: 1px 5px; }
   .oldmap-far .oldmap-tip { display: none; }
   .oldmap-logo img { display: block; }
+  .oldmap-fullbtn { font-size: 18px; line-height: 30px !important; text-align: center; }
+  .oldmap.oldmap-full { position: fixed; inset: 0; z-index: 10000; margin: 0; background: var(--bg, #fbf7ef);
+    display: flex; flex-direction: column; padding: 0.5rem; }
+  .oldmap.oldmap-full .oldmap-map { flex: 1; height: auto !important; border-radius: 6px; }
+  .oldmap.oldmap-full figcaption { display: none; }
+  body.oldmap-noscroll { overflow: hidden; }
 </style>

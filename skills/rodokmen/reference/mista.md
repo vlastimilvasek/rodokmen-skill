@@ -49,7 +49,7 @@ Koncept textu ukaž uživateli v chatu dřív, než ho zapíšeš (jako u příb
 
 ## 4. Stará mapa přes dnešní – `data/stare_mapy.json` + `tools/georef.py`
 Nejpůsobivější výstup: indikační skica (nebo katastrální mapa) průhledně přes dnešní mapu, s kroužky domů předků.
-Na stránce obce se ukáže sekce „Stará mapa přes dnešní“ (posuvník průhlednosti, podklad OpenStreetMap / letecký
+Na stránce obce se ukáže sekce „Překryv map“ místo horní fotky a malé mapy (posuvník průhlednosti, tlačítko ⛶ celé okno, podklad OpenStreetMap / letecký
 snímek ČÚZK, a když je v kořeni projektu soubor `.mapy_api_klic`, i Mapy.com) a u domu odkaz „kde dům stál“.
 ```json
 [{"id": "straznice_1827", "misto": "Strážnice", "nazev": "Indikační skica stabilního katastru", "rok": 1827,
