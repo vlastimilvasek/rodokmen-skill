@@ -4,6 +4,7 @@ Mapy a záchytné body jsou v data/stare_mapy.json (seznam), každá mapa:
   {"id": "straznice_1827", "misto": "Strážnice", "nazev": "Indikační skica stabilního katastru", "rok": 1827,
    "obraz": "dokumenty/indikacni-skici/straznice_1827.jpg", "orez": [x0, y0, x1, y1],   # část obrázku na web
    "skryt": [[x0, y0, x1, y1], …],         # obdélníky, které na překryvu nemají být (seznamy majitelů, vložené výřezy)
+   "zacelit": [[x0, y0, x1, y1, dx, dy], …],  # obdélník (legenda, nápis) přemalovat okolním papírem z místa posunutého o dx, dy
    "zdroj": "MZA Brno, …", "transformace": "podobnost" | "afinni",
    "body": [{"px": [x, y], "gps": [lat, lon], "popis": "kostel sv. Martina – křížení lodí", "vynechat": false}],
    "domy": [{"px": [x, y], "cislo": "161", "popis": "Jiří Lípa (1827)"}]}
@@ -86,6 +87,12 @@ def narovnat(mapa, prevod, cil, max_sirka=3000):
         return [[float(s), float(w)], [float(n), float(e)]]
     src = Image.open(os.path.join(ROOT, mapa["obraz"])).convert("RGBA")
     from PIL import ImageDraw
+    for x0_, y0_, x1_, y1_, dx, dy in mapa.get("zacelit", []):   # nápis na prázdném papíře → zakrýt papírem z okolí
+        patch = src.crop((x0_ + dx, y0_ + dy, x1_ + dx, y1_ + dy))
+        from PIL import ImageFilter
+        m = Image.new("L", patch.size, 0); f = 25
+        ImageDraw.Draw(m).rectangle((f, f, patch.width - f, patch.height - f), fill=255)
+        src.paste(patch, (x0_, y0_), m.filter(ImageFilter.GaussianBlur(f / 2)))
     for r in mapa.get("skryt", []):          # seznamy, legendy a výřezy mimo skutečnou polohu → průhledné
         ImageDraw.Draw(src).rectangle(r, fill=(0, 0, 0, 0))
     src = src.crop((x0, y0, x1, y1))
