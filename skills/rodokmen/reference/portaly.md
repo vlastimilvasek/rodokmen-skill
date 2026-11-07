@@ -167,6 +167,15 @@ Adresy u nevyzkoušených portálů ověř při prvním použití (portály se m
        když 2,5 min nepřibyl snímek (stránka se sama obnovila apod.) → zkontrolovat `typeof ARCH`, navázat od `dalsi`.
        V souhrnu `chyba` (opakovaně se nenačítá = možná 429/omezení) → **přestat**, zapsat stav do deníku, ráno říct.
        `obnovit: true` nebo hotová kniha → znovu bod 1.
+  - **Index knih (`tools/index_knih.py`)** – z archivu: (1) **mapa knihy** (levné): `nahled <kniha> <od> <do> --cast 0,0,1,0.22
+    --sloupce 2 --sirka 1000 [--krok 10]` složí záhlaví snímků s čísly na jeden arch → přečíst rok, obec, folio u každého
+    (u souvislých knih stačí každý 10. snímek); (2) **rejstříky** (dražší, ~1 snímek na stránku): rozdělit snímek na
+    poloviny, ale levou stranu **s přesahem** (0–58 % šířky), jinak se folia ve hřbetu ztratí. Lze rozdělit mezi pomocníky
+    (výstup `<snímek>|<písmeno>|<rok>: Příjmení Jméno folio; …`), namátkově ověřit na známých zápisech.
+    Data `data/index_knih/<svazek>.json` (mapa, snímky, rejstrik s `cil` = snímek zápisu, zapisy), `index_knih.py nacti`
+    → `archiv/index.sqlite`; `hledej` sjednocuje pravopis (Waschek = Vašek, Kachlikowa = Kachlík). Kurent v rejstříku
+    při 2000 px: u příjmení často nejisté („?“), sledované rodiny se ale čtou dobře. Index je jen vodítko – doloženo
+    až po přečtení zápisu na snímku.
     Tempo ~8–10 s na snímek ≈ 350 snímků/h ≈ 0,3 GB/h. Chrome se napoprvé může zeptat „stáhnout více souborů“ – povolí uživatel.
 - Rejstříky MZA: číslo za jménem je obvykle **folio**, ne pořadové číslo zápisu (to se každý rok číslovalo znovu);
   posun folio → snímek si změř na dvou místech.
