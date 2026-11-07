@@ -140,6 +140,33 @@ Adresy u nevyzkoušených portálů ověř při prvním použití (portály se m
   `matrika/detail/<id>?image=<název>.jp2` (názvy po 10: …-00010.jp2 = snímek 1).
 - Výřez bez stažení snímku: přiblížit polovinu zápisu, snímek obrazovky (`save_to_disk`), totéž pro druhou polovinu,
   `magick l.png r.png +append` → `vyrez.py`. Rozlišení je nižší než originál, ale čitelné.
+- **Místní archiv snímků MZA (`tools/mza_archiv.js` + `tools/archiv_snimku.py`)** – aby se kniha nemusela listovat
+  znovu kvůli jiné osobě. Jen se souhlasem uživatele (hromadné ukládání), nejlépe přes noc.
+  - Co MZA dovoluje (nápověda Acta Publica, „Lze stáhnout snímek?“): ukládat **jen standardními prostředky prohlížeče**,
+    delší strana nejvýš **2000 px**; snímky nikde nezveřejňovat (podmínky užití, bod 4–5). Proto skript jen uloží to,
+    co prohlížeč OpenSeadragon na stránce sám vykreslil (canvas → JPEG, delší strana 2000 px), pomalu (pauza 6 s).
+    Žádné přímé dotazy na iipsrv ani stahování stránek detailu mimo prohlížeč; kontrolu robota **nikdy neobcházet**.
+  - Archiv `archiv/mza/<kniha>/<snímek4>.jpg` je v `.gitignore`, nejde na web. 2000 px stačí na listování a hledání
+    jmen; přesné čtení a výřez pro web dál ze zvětšení přímo na portálu (nebo z archivu, je-li zápis dobře čitelný).
+  - Pořadí knih: `python3 -I tools/archiv_snimku.py plan` (farnosti s nejvíc osobami napřed, jen knihy ze `svazky.json`)
+    → `archiv/fronta.json`. Před listováním knihy na portálu: `archiv_snimku.py kde <kniha> <snímek>` (vrátí cestu).
+  - Úskalí zjištěná v praxi: (1) **přístup ke snímkům platí ~30 min od načtení stránky** (čas v adrese dlaždic) –
+    skript včas skončí s `obnovit: true`, stránku obnovit a navázat; (2) **skrytá karta nic nekreslí** (jiná karta
+    v okně, minimalizované/zakryté okno, zamčená obrazovka) – skript čeká; přes noc nechat okno Chrome s kartou MZA
+    vpředu, obrazovku nezamykat a počítač neuspávat (nastaví uživatel sám); (3) `minPixelRatio` v OpenSeadragonu:
+    **nižší = ostřejší** (0.3), výchozí 0.5 občas vykreslí hrubou úroveň; (4) stránka si sama mění výšku prohlížeče –
+    velikost držet stylem s `!important`; (5) nástroj pro JavaScript má limit ~45 s – smyčka běží na pozadí ve stránce.
+  - Noční běh (Claude in Chrome), opakovat po dávkách:
+    1. `archiv_snimku.py zarad` (přesune `mza_*` ze Stažených souborů do archivu) a `archiv_snimku.py dalsi`
+       → `{"kniha", "url", "od"}`; „HOTOVO“ = konec.
+    2. `navigate` na `url`; když stránka nemá prohlížeč (`typeof viewer`), je tam kontrola robota → **skončit**, zapsat.
+    3. Skript se vloží jednou celý (obsah `tools/mza_archiv.js`) a uloží do `localStorage.rodokmen_arch_js`;
+       po každém načtení stránky pak stačí `(0,eval)(localStorage.rodokmen_arch_js); ARCH.start({svazek: <kniha>, od: <od>, pauza: 6})`.
+       Po změně `mza_archiv.js` uložit znovu.
+    4. Čekat na souhrn dávky: Bash na pozadí `until ls ~/Downloads/mza_<kniha>_souhrn*.json; do sleep 5; done`.
+       V souhrnu `chyba` (opakovaně se nenačítá = možná 429/omezení) → **přestat**, zapsat stav do deníku, ráno říct.
+       `obnovit: true` nebo hotová kniha → znovu bod 1.
+    Tempo ~8–10 s na snímek ≈ 350 snímků/h ≈ 0,3 GB/h. Chrome se napoprvé může zeptat „stáhnout více souborů“ – povolí uživatel.
 - Rejstříky MZA: číslo za jménem je obvykle **folio**, ne pořadové číslo zápisu (to se každý rok číslovalo znovu);
   posun folio → snímek si změř na dvou místech.
 - **Indikační skici stabilního katastru** (1824–1843, čísla domů červeně, u pozemků jména držitelů „Waschek Mathias N° 17“)

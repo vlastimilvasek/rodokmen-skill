@@ -21,3 +21,6 @@ web/netlify/edge-functions/
 nasazeni/
 # klíč k Mapy.com API (nesdílet, nepřidávat do gitu)
 .mapy_api_klic
+
+# místní archiv snímků matrik (jen pro práci, nezveřejňovat – podmínky archivů)
+archiv/
