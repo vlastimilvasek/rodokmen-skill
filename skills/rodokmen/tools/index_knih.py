@@ -53,7 +53,7 @@ def klic_prijmeni(s):
     s = unicodedata.normalize("NFKD", s or "").encode("ascii", "ignore").decode().lower()
     s = re.sub(r"[^a-z]", "", s)
     for a, b in (("sch", "s"), ("tsch", "c"), ("cz", "c"), ("tz", "c"), ("sz", "s"), ("ss", "s"), ("w", "v"),
-                 ("th", "t"), ("ph", "f"), ("ck", "k"), ("qu", "kv"), ("y", "i"), ("x", "ks"), ("g", "h")):
+                 ("th", "t"), ("ph", "f"), ("ck", "k"), ("qu", "kv"), ("y", "i"), ("j", "i"), ("x", "ks"), ("g", "h")):
         s = s.replace(a, b)
     for kon in ("ovna", "ova", "inna", "ina", "in", "a"):   # Kachlíková, Kachlikowa, Wotawin, Wotawa → kachlik / votav
         if len(s) > len(kon) + 3 and s.endswith(kon):
@@ -180,7 +180,18 @@ def cmd_hledej(args):
     for k, sn, dr, dat, dum, ob, role, j, pr, vek, ji in zz:
         print("zápis     kniha %-6s %s %-10s %-10s č. %-4s %-12s %-10s %s %s%s  → snímek %s" % (k, dr, dat or "", ob or "", dum or "", role or "", j or "", pr, ("(%s)" % vek) if vek else "", " [?]" if ji == "nejistá" else "", sn))
     if not rr and not zz:
-        print("Nic (klíč „%s“). Index je jen pro zaindexované knihy – `index_knih.py stav`." % kp)
+        # přibližná shoda – rejstříky čtené z 2000 px mají v příjmeních chyby (Swatopek místo Swatosch …)
+        import difflib
+        kl = [r[0] for r in db.execute("SELECT DISTINCT kp FROM rejstrik UNION SELECT DISTINCT kp FROM osoba")]
+        blizke = difflib.get_close_matches(kp, kl, n=6, cutoff=0.72)
+        if blizke:
+            print("Přesně nic; podobná příjmení v indexu (klíč „%s“):" % kp)
+            for b2 in blizke:
+                q2 = "SELECT DISTINCT prijmeni FROM rejstrik WHERE kp=?"
+                tv = ", ".join(x[0] for x in db.execute(q2, (b2,)))
+                print("   %-14s (%s) – `index_knih.py hledej %s`" % (b2, tv, tv.split(",")[0]))
+        else:
+            print("Nic (klíč „%s“). Index je jen pro zaindexované knihy – `index_knih.py stav`." % kp)
 
 
 def cmd_kde(args):
