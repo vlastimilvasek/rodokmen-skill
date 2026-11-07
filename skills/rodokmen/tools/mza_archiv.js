@@ -64,7 +64,7 @@
     const n = viewer.tileSources.length;
     // přístup ke snímkům platí ~30 min od načtení stránky (čas v adrese dlaždic) – včas skončit, stránku obnovit a navázat
     const m = String(viewer.tileSources[0]).match(/fcgi\/(\d{10})\//);
-    const platiDo = m ? +m[1] * 1000 - 120000 : Date.now() + 25 * 60000;
+    const platiDo = m ? +m[1] * 1000 - 300000 : Date.now() + 23 * 60000;   // stránka se sama obnoví ~2 min před vypršením – 5 min rezerva
     doS = Math.min(doS || n, n);
     let chyby = 0, selhaneDlazdice = 0; const velikosti = [];
     const h = () => { selhaneDlazdice++; };

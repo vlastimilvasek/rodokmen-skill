@@ -151,7 +151,7 @@ Adresy u nevyzkoušených portálů ověř při prvním použití (portály se m
   - Pořadí knih: `python3 -I tools/archiv_snimku.py plan` (farnosti s nejvíc osobami napřed, jen knihy ze `svazky.json`)
     → `archiv/fronta.json`. Před listováním knihy na portálu: `archiv_snimku.py kde <kniha> <snímek>` (vrátí cestu).
   - Úskalí zjištěná v praxi: (1) **přístup ke snímkům platí ~30 min od načtení stránky** (čas v adrese dlaždic) –
-    skript včas skončí s `obnovit: true`, stránku obnovit a navázat; (2) **skrytá karta nic nekreslí** (jiná karta
+    skript skončí 5 min předem s `obnovit: true`, stránku obnovit a navázat (stránka MZA se jinak **sama obnoví ~2 min před vypršením** a skript tím zmizí); (2) **skrytá karta nic nekreslí** (jiná karta
     v okně, minimalizované/zakryté okno, zamčená obrazovka) – skript čeká; přes noc nechat okno Chrome s kartou MZA
     vpředu, obrazovku nezamykat a počítač neuspávat (nastaví uživatel sám); (3) `minPixelRatio` v OpenSeadragonu:
     **nižší = ostřejší** (0.3), výchozí 0.5 občas vykreslí hrubou úroveň; (4) stránka si sama mění výšku prohlížeče –
@@ -163,7 +163,8 @@ Adresy u nevyzkoušených portálů ověř při prvním použití (portály se m
     3. Skript se vloží jednou celý (obsah `tools/mza_archiv.js`) a uloží do `localStorage.rodokmen_arch_js`;
        po každém načtení stránky pak stačí `(0,eval)(localStorage.rodokmen_arch_js); ARCH.start({svazek: <kniha>, od: <od>, pauza: 6})`.
        Po změně `mza_archiv.js` uložit znovu.
-    4. Čekat na souhrn dávky: Bash na pozadí `until ls ~/Downloads/mza_<kniha>_souhrn*.json; do sleep 5; done`.
+    4. Čekat na souhrn dávky: Bash na pozadí `bash tools/hlidej_archiv.sh <kniha>` – skončí souhrnem, nebo hláškou ZASEKNUTO,
+       když 2,5 min nepřibyl snímek (stránka se sama obnovila apod.) → zkontrolovat `typeof ARCH`, navázat od `dalsi`.
        V souhrnu `chyba` (opakovaně se nenačítá = možná 429/omezení) → **přestat**, zapsat stav do deníku, ráno říct.
        `obnovit: true` nebo hotová kniha → znovu bod 1.
     Tempo ~8–10 s na snímek ≈ 350 snímků/h ≈ 0,3 GB/h. Chrome se napoprvé může zeptat „stáhnout více souborů“ – povolí uživatel.
