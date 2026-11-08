@@ -148,6 +148,13 @@ Adresy u nevyzkoušených portálů ověř při prvním použití (portály se m
     Žádné přímé dotazy na iipsrv ani stahování stránek detailu mimo prohlížeč; kontrolu robota **nikdy neobcházet**.
   - Archiv `archiv/mza/<kniha>/<snímek4>.jpg` je v `.gitignore`, nejde na web. 2000 px stačí na listování a hledání
     jmen; přesné čtení a výřez pro web dál ze zvětšení přímo na portálu (nebo z archivu, je-li zápis dobře čitelný).
+  - **Podrobnost – stáhnout jednou v dobré kvalitě** (2026-11): celá dvoustránka v 2000 px na drobné písmo (kurent v rejstříku,
+    tabulkové zápisy) nestačí. Skript proto umí u snímku uložit navíc **4 přiblížené čtvrtiny** s přesahem (`<snímek4>_LH/_LD/_PH/_PD.jpg`,
+    každá zase max. 2000 px = to, co prohlížeč ukáže při přiblížení). Hromadně jen tam, kde se bude číst stránka po stránce:
+    kniha **bez rejstříku** (v popisu `bez rejstříku/indexu` nebo bez zmínky) → čtvrtiny všech snímků; kniha **s rejstříkem** →
+    celé dvoustránky + čtvrtiny jen stránek rejstříku (`archiv/podrobne.json`, `archiv_snimku.py podrobne <kniha> 103-114,223-231`;
+    výchozí rozsahy z popisu knihy bývají neúplné – oddíly obcí mají vlastní rejstříky, po stažení je najít v náhledu
+    `magick montage` celé knihy, rejstřík = úzké sloupce jmen); nalezené zápisy pak `mza_vyrezy.js`. Čtvrtiny = ~4× déle a ~4× místa.
   - Pořadí knih: `python3 -I tools/archiv_snimku.py plan` (farnosti s nejvíc osobami napřed, jen knihy ze `svazky.json`)
     → `archiv/fronta.json`. Před listováním knihy na portálu: `archiv_snimku.py kde <kniha> <snímek>` (vrátí cestu).
   - Úskalí zjištěná v praxi: (1) **přístup ke snímkům platí ~30 min od načtení stránky** (čas v adrese dlaždic) –
@@ -158,10 +165,12 @@ Adresy u nevyzkoušených portálů ověř při prvním použití (portály se m
     velikost držet stylem s `!important`; (5) nástroj pro JavaScript má limit ~45 s – smyčka běží na pozadí ve stránce.
   - Noční běh (Claude in Chrome), opakovat po dávkách:
     1. `archiv_snimku.py zarad` (přesune `mza_*` ze Stažených souborů do archivu) a `archiv_snimku.py dalsi`
-       → `{"kniha", "url", "od"}`; „HOTOVO“ = konec.
+       → `{"kniha", "url", "od" | "snimky", "start": {…}}`; „HOTOVO“ = konec. `start` obsahuje rovnou parametry pro `ARCH.start`
+       (`ctvrtiny: true` u knih bez rejstříku, `snimky: […]` pro doplnění čtvrtin rejstříku); `dalsi --farnost <text>` omezí farnost.
     2. `navigate` na `url`; když stránka nemá prohlížeč (`typeof viewer`), je tam kontrola robota → **skončit**, zapsat.
     3. Skript se vloží jednou celý (obsah `tools/mza_archiv.js`) a uloží do `localStorage.rodokmen_arch_js`;
-       po každém načtení stránky pak stačí `(0,eval)(localStorage.rodokmen_arch_js); ARCH.start({svazek: <kniha>, od: <od>, pauza: 6})`.
+       po každém načtení stránky pak stačí `(0,eval)(localStorage.rodokmen_arch_js); ARCH.start(<start z dalsi>)`. Při `obnovit: true` je v souhrnu
+       `snimkyZbyva` – `dalsi` je ale spočítá znovu sám.
        Po změně `mza_archiv.js` uložit znovu.
     4. Čekat na souhrn dávky: Bash na pozadí `bash tools/hlidej_archiv.sh <kniha>` – skončí souhrnem, nebo hláškou ZASEKNUTO,
        když 2,5 min nepřibyl snímek (stránka se sama obnovila apod.) → zkontrolovat `typeof ARCH`, navázat od `dalsi`.
