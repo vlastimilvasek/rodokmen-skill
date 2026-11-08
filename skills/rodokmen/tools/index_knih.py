@@ -261,7 +261,9 @@ def cmd_vloz(args):
     """Vloží přečtený (sloučený) rejstřík do data/index_knih/<kniha>.json: JSON seznam řádků
     {sn, prijmeni, jmeno, folio, rok, obec, druh, jistota, pozn, cil?}. Řádky stejných snímků nahradí, ostatní nechá."""
     kniha, src = args[0].replace("aron_", ""), args[1]
-    p = os.path.join(JSON_DIR, ("mza_" + kniha if kniha.isdigit() else kniha) + ".json")
+    p = os.path.join(JSON_DIR, kniha + ".json")
+    if not os.path.exists(p) and kniha.isdigit() and os.path.exists(os.path.join(JSON_DIR, "mza_" + kniha + ".json")):
+        p = os.path.join(JSON_DIR, "mza_" + kniha + ".json")   # kniha MZA (číslo); ARON = 8 znaků apu (i když jsou to samé číslice)
     d = json.load(open(p, encoding="utf-8")) if os.path.exists(p) else {"kniha": kniha, "svazek": kniha, "mapa": [], "snimky": {}, "rejstrik": [], "zapisy": []}
     nove = json.load(open(src, encoding="utf-8"))
     sn = {r["sn"] for r in nove}
