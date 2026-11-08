@@ -103,8 +103,11 @@ def cmd_plan(args):
 
 def cmd_dalsi(args):
     index = jload(INDEX, {})
+    farnost = args[args.index("--farnost") + 1].lower() if "--farnost" in args else None   # např. --farnost komín
     for x in jload(FRONTA, []):
         i = index.get(x["kniha"], {})
+        if farnost and farnost not in x.get("farnost", "").lower():
+            continue
         if i.get("hotovo"):
             continue
         uz = ulozene(x["kniha"])

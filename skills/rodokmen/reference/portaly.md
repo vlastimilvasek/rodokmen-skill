@@ -176,6 +176,13 @@ Adresy u nevyzkoušených portálů ověř při prvním použití (portály se m
     → `archiv/index.sqlite`; `hledej` sjednocuje pravopis (Waschek = Vašek, Kachlikowa = Kachlík). Kurent v rejstříku
     při 2000 px: u příjmení často nejisté („?“), sledované rodiny se ale čtou dobře. Index je jen vodítko – doloženo
     až po přečtení zápisu na snímku.
+    **Kvalitní verze rejstříku** (ověřeno na Komíně a Veselí, 2026-11): 2000 px na kurent nestačí. `tools/mza_vyrezy.js` (v prohlížeči,
+    `VYR.start({svazek, snimky:[…]})`) uloží každý snímek rejstříku jako 4 přiblížené čtvrtiny s přesahem přes hřbet (`_LH/_LD/_PH/_PD`).
+    Rejstřík přečtou **dva pomocníci nezávisle** (řádek `snímek|čtvrtina|písmeno|příjmení|jméno|pag|rok`), `tools/sloucit_cteni.py`
+    je spáruje; shoda = jistá, spory se seskupí podle dvojice příjmení a **rozhodčí čtení** (přiblížit + ověřit jméno v samotném zápisu,
+    kde je psané větším písmem) rozhodne celou skupinu najednou; nerozhodnuté = obě varianty jako nejisté. Typicky se čtení
+    liší u 30–50 % záznamů – druhé čtení se vyplatí. Pomocníky dělit po 3–15 snímcích; když jim Read vrátí „[media removed]“
+    u právě otevřeného obrázku, musí skončit – rozhodnutí bez viděného obrázku vyřadit a přečíst znovu.
     Tempo ~8–10 s na snímek ≈ 350 snímků/h ≈ 0,3 GB/h. Chrome se napoprvé může zeptat „stáhnout více souborů“ – povolí uživatel.
 - Rejstříky MZA: číslo za jménem je obvykle **folio**, ne pořadové číslo zápisu (to se každý rok číslovalo znovu);
   posun folio → snímek si změř na dvou místech.
