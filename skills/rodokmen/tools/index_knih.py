@@ -119,7 +119,7 @@ SCHEMA = """
 CREATE TABLE kniha(kniha TEXT PRIMARY KEY, svazek TEXT, cetl TEXT, pozn TEXT);
 CREATE TABLE mapa(kniha TEXT, od INT, do INT, druh TEXT, obec TEXT, rok_od INT, rok_do INT, pozn TEXT);
 CREATE TABLE snimek(kniha TEXT, sn INT, rok TEXT, mesice TEXT, folio TEXT, obec TEXT, druh TEXT, pozn TEXT);
-CREATE TABLE rejstrik(kniha TEXT, sn INT, prijmeni TEXT, jmeno TEXT, folio TEXT, rok INT, cil INT, obec TEXT, druh TEXT, kp TEXT, kj TEXT, jistota TEXT, pozn TEXT);
+CREATE TABLE rejstrik(kniha TEXT, sn INT, prijmeni TEXT, jmeno TEXT, folio TEXT, rok INT, cil INT, obec TEXT, druh TEXT, kp TEXT, kj TEXT, jistota TEXT, pozn TEXT, cil_kniha TEXT);
 CREATE TABLE zapis(id INTEGER PRIMARY KEY, kniha TEXT, sn INT, druh TEXT, datum TEXT, dum TEXT, obec TEXT, jistota TEXT, pozn TEXT);
 CREATE TABLE osoba(zapis INT, role TEXT, jmeno TEXT, prijmeni TEXT, vek TEXT, pozn TEXT, kp TEXT, kj TEXT);
 CREATE INDEX ix_r ON rejstrik(kp); CREATE INDEX ix_o ON osoba(kp);
@@ -142,8 +142,8 @@ def cmd_nacti(args):
         for sn, s in d.get("snimky", {}).items():
             db.execute("INSERT INTO snimek VALUES(?,?,?,?,?,?,?,?)", (k, int(sn), s.get("rok"), s.get("mesice"), s.get("folio"), s.get("obec"), s.get("druh"), s.get("pozn")))
         for r in d.get("rejstrik", []):
-            db.execute("INSERT INTO rejstrik VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)", (k, r.get("sn"), r.get("prijmeni"), r.get("jmeno"), r.get("folio"), r.get("rok"), r.get("cil"),
-                                                                             r.get("obec"), r.get("druh"), klic_prijmeni(r.get("prijmeni")), klic_jmena(r.get("jmeno")), r.get("jistota"), r.get("pozn")))
+            db.execute("INSERT INTO rejstrik VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)", (k, r.get("sn"), r.get("prijmeni"), r.get("jmeno"), r.get("folio"), r.get("rok"), r.get("cil"),
+                                                                             r.get("obec"), r.get("druh"), klic_prijmeni(r.get("prijmeni")), klic_jmena(r.get("jmeno")), r.get("jistota"), r.get("pozn"), r.get("cil_kniha")))
             n["rejstrik"] += 1
         for z in d.get("zapisy", []):
             c = db.execute("INSERT INTO zapis(kniha,sn,druh,datum,dum,obec,jistota,pozn) VALUES(?,?,?,?,?,?,?,?)",
@@ -169,7 +169,7 @@ def cmd_hledej(args):
     kj = klic_jmena(poz[1]) if len(poz) > 1 else None
     obec, od, do, druh = opt(args, "--obec"), opt(args, "--od"), opt(args, "--do"), opt(args, "--druh")
     db = pripoj()
-    q = "SELECT r.kniha, r.sn, r.prijmeni, r.jmeno, r.folio, r.rok, r.cil, r.obec, r.druh, r.jistota, r.pozn FROM rejstrik r WHERE r.kp=?"
+    q = "SELECT r.kniha, r.sn, r.prijmeni, r.jmeno, r.folio, r.rok, r.cil, r.obec, r.druh, r.jistota, r.pozn, r.cil_kniha FROM rejstrik r WHERE r.kp=?"
     p = [kp]
     if kj: q += " AND r.kj=?"; p.append(kj)
     if obec: q += " AND r.obec LIKE ?"; p.append("%" + obec + "%")
@@ -177,8 +177,8 @@ def cmd_hledej(args):
     if do: q += " AND r.rok<=?"; p.append(int(do))
     if druh: q += " AND r.druh=?"; p.append(druh)
     rr = db.execute(q + " ORDER BY r.rok, r.kniha", p).fetchall()
-    for k, sn, pr, j, fo, rok, cil, ob, dr, ji, pz in rr:
-        print("rejstřík  kniha %-8s %s %-4s %-14s %-12s pag. %-4s → snímek %-4s (rejstřík sn. %s) %s%s%s" % (k, dr or "", rok or "", pr, j or "", fo or "?", cil or "?", sn, ob or "",
+    for k, sn, pr, j, fo, rok, cil, ob, dr, ji, pz, ck in rr:
+        print("rejstřík  kniha %-8s %s %-4s %-14s %-12s pag. %-4s → %s (rejstřík sn. %s) %s%s%s" % (k, dr or "", rok or "", pr, j or "", fo or "?", ("%s sn. %s" % (ck, cil)) if (ck and cil) else ("snímek %s" % cil if cil else "snímek ?"), sn, ob or "",
               (" – " + pz) if pz else "", " [čtení nejisté]" if ji == "nejistá" else ""))
     q = ("SELECT z.kniha, z.sn, z.druh, z.datum, z.dum, z.obec, o.role, o.jmeno, o.prijmeni, o.vek, z.jistota FROM osoba o JOIN zapis z ON z.id=o.zapis WHERE o.kp=?")
     p = [kp]
@@ -257,6 +257,88 @@ def cmd_ctvrtiny(args):
     print("Uloženo %d výřezů do %s" % (n, os.path.relpath(out_dir, ROOT)))
 
 
+def _cislo_strany(t):
+    m = re.search(r"\d+", str(t or ""))
+    return int(m.group(0)) if m else None
+
+
+def _kotvy(cil):
+    """Opěrné body cílové knihy: {(obec_klíč, druh): [(strana, snímek), …]} z „snimky“ (folio = levá strana snímku)."""
+    p = os.path.join(JSON_DIR, cil + ".json")
+    d = json.load(open(p, encoding="utf-8")) if os.path.exists(p) else {}
+    out = {}
+    for sn, s in d.get("snimky", {}).items():
+        f = _cislo_strany(s.get("folio"))
+        if f is None or not s.get("obec"):
+            continue
+        for kl in ((_klic_obce(s["obec"]), s.get("druh") or ""), (_klic_obce(s["obec"]), "*"), ("*", s.get("druh") or ""), ("*", "*")):
+            out.setdefault(kl, []).append((f, int(sn)))
+    for v in out.values():
+        v.sort()
+    return out
+
+
+def _klic_obce(o):
+    o = unicodedata.normalize("NFKD", o or "").encode("ascii", "ignore").decode().lower()
+    return re.sub(r"[^a-z]", "", o)[:5]
+
+
+def _interpoluj(body, f):
+    """Snímek pro stranu f podle opěrných bodů (strana, snímek) – lineárně, mimo rozsah jen do vzdálenosti 6 stran."""
+    if not body:
+        return None
+    pod = [b for b in body if b[0] <= f]
+    nad = [b for b in body if b[0] >= f]
+    if pod and nad:
+        (f1, s1), (f2, s2) = pod[-1], nad[0]
+        return s1 if f1 == f2 else round(s1 + (f - f1) * (s2 - s1) / (f2 - f1))
+    (f1, s1) = pod[-1] if pod else nad[0]
+    if abs(f - f1) > 6:
+        return None
+    return s1 + round((f - f1) / 2)
+
+
+def cmd_cile(args):
+    """Doplní k řádkům rejstříku snímek zápisu (cil, cil_kniha) podle pravidel „cile“ v data/index_knih/<rejstřík>.json:
+    "cile": [{"matrika": "B", "kniha": "feb3187a", "druh": "N"}, {"obec": "Desná", "kniha": "6608e6da"}, {"kniha": "0e3311d5"}]
+    (první shoda vyhraje; „matrika“ = písmeno v poznámce „matrika X“, „obec“ = začátek názvu obce, bez podmínky = výchozí).
+    Cílová kniha musí mít v „snimky“ opěrné body {snímek: {folio: levá strana, obec, druh}}."""
+    kniha = args[0]
+    p = os.path.join(JSON_DIR, kniha + ".json")
+    d = json.load(open(p, encoding="utf-8"))
+    pravidla = d.get("cile", [])
+    kotvy = {}
+    n = ok = 0
+    for r in d.get("rejstrik", []):
+        n += 1
+        mat = re.search(r"matrika ([A-Z])", r.get("pozn") or "")
+        mat = mat.group(1) if mat else None
+        cil = None
+        for pr in pravidla:
+            if "matrika" in pr and pr["matrika"] != mat:
+                continue
+            if "obec" in pr and _klic_obce(r.get("obec")) != _klic_obce(pr["obec"]):
+                continue
+            cil = pr; break
+        r.pop("cil", None); r.pop("cil_kniha", None)
+        f = _cislo_strany(r.get("folio"))
+        if not cil or f is None:
+            continue
+        k2 = cil["kniha"]
+        if k2 not in kotvy:
+            kotvy[k2] = _kotvy(k2)
+        druh = cil.get("druh", "*")
+        ob = "*" if cil.get("bez_obce") else _klic_obce(r.get("obec"))
+        body = kotvy[k2].get((ob, druh))
+        sn = _interpoluj(body, f) if body else None
+        if sn:
+            r["cil"], r["cil_kniha"] = sn, k2
+            ok += 1
+    with open(p, "w", encoding="utf-8", newline="\n") as fo:
+        json.dump(d, fo, ensure_ascii=False, indent=1); fo.write("\n")
+    print("%s: snímek zápisu doplněn u %d z %d řádků" % (kniha, ok, n))
+
+
 def cmd_vloz(args):
     """Vloží přečtený (sloučený) rejstřík do data/index_knih/<kniha>.json: JSON seznam řádků
     {sn, prijmeni, jmeno, folio, rok, obec, druh, jistota, pozn, cil?}. Řádky stejných snímků nahradí, ostatní nechá."""
@@ -291,7 +373,7 @@ def cmd_stav(args):
 
 
 def main():
-    cmds = ("nahled", "ctvrtiny", "vloz", "nacti", "hledej", "kde", "stav")
+    cmds = ("nahled", "ctvrtiny", "vloz", "cile", "nacti", "hledej", "kde", "stav")
     if len(sys.argv) < 2 or sys.argv[1] not in cmds:
         print(__doc__)
         sys.exit(2)

@@ -46,6 +46,10 @@ Adresy u nevyzkoušených portálů ověř při prvním použití (portály se m
     `sloucit_cteni.py` je spáruje, spory rozhodneš na snímku, výsledek (JSON seznam řádků) vloží `index_knih.py vloz <kniha> <soubor>`.
     Srovnání modelů (rejstřík N 1836–1880, ověřeno na snímku): Haiku nepoužitelné; 2× Sonnet shoda 90 %; Opus lepší v kurentu,
     v latince soustavně chyboval; Fable nejlepší v latince, v kurentu chybuje sebejistě (bez „?“), nejdražší a nejpomalejší.
+    **Propojení rejstříku se snímky (`index_knih.py cile <rejstřík>`):** v cílové knize stačí opěrné body „snimky“ {snímek: {folio, obec, druh}}
+    – levně: archy záhlaví (horních 16 % každého 3. snímku, 24 na arch) přečte Sonnet (snímek|levá|pravá strana|obec|druh|rok);
+    většina knih má jedno číslo „Pag.“ na dvojstranu vpravo. V rejstříku pravidla „cile“ (matrika/obec → kniha, „bez_obce“ u knih
+    řazených chronologicky); `hledej` pak ukáže „→ <kniha> sn. N“. Ověřeno 8/8 na známých zápisech.
     Kurent (zde do ~1850) ber jako nejistý i při shodě obou čtení. Pomocník občas kurent odmítne číst – v zadání výslovně
     „přečti vše, nejisté označ ?, nic nevynechávej“. Spotřeba ~150 tis. tokenů na 6 snímků a čtenáře; 89 snímků ≈ 30 běhů, ~6 000 řádků.
 - V ARON jsou i další fondy (sčítání lidu, některé gruntovní knihy, kroniky) – `aron_search.py "Obec" "název fondu"`.
