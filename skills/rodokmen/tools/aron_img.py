@@ -9,6 +9,8 @@ Použití:
   aron_img.py <apu_id> link <n>      -> trvalý odkaz na snímek n v prohlížeči ARON (pole "odkaz" v zaznamy.json)
   aron_img.py <apu_id> svazek        -> zapíše svazek do data/svazky.json (klíč = prvních 8 znaků apu_id)
 
+Pomalý server: proměnné ARON_TIMEOUT (výchozí 300 s), ARON_TRIES (6), ARON_THREADS (4); průběh se vypisuje na stderr.
+
 Popis svazků se ukládá do pracovni/.cache_aron/<apu_id>.json (ve složce projektu).
 """
 import glob, json, math, os, shutil, subprocess, sys, tempfile, time, urllib.request
@@ -33,16 +35,23 @@ def magick():
     return m
 
 
-def get(url, binary=False, tries=4):
+# Pomalý server: ARON_TIMEOUT (s na jeden požadavek), ARON_TRIES (pokusy), ARON_THREADS (souběžná stahování)
+TIMEOUT = int(os.environ.get("ARON_TIMEOUT", "300"))
+TRIES = int(os.environ.get("ARON_TRIES", "6"))
+THREADS = int(os.environ.get("ARON_THREADS", "4"))
+
+
+def get(url, binary=False, tries=TRIES):
     for attempt in range(tries):
         try:
-            with urllib.request.urlopen(url, timeout=90) as r:
+            with urllib.request.urlopen(url, timeout=TIMEOUT) as r:
                 data = r.read()
             return data if binary else data.decode("utf-8")
-        except OSError:
+        except OSError as e:
             if attempt == tries - 1:
                 raise
-            time.sleep(2 * (attempt + 1))
+            print(f"  opakuji ({attempt + 1}/{tries - 1}): {type(e).__name__}", file=sys.stderr, flush=True)
+            time.sleep(5 * (attempt + 1))
 
 
 def volume(apu_id):
@@ -93,13 +102,18 @@ def fetch_image(dzi_url, level_offset=1, out="page.jpg", crop=None):
             for c in range(c0, c1 + 1):
                 jobs.append((c, r, f"{base}/{level}/{c}_{r}.jpg", os.path.join(tmp, f"{c}_{r}.jpg")))
 
+        done = [0]
+
         def dl(job):
             c, r, url, p = job
+            data = get(url, binary=True)
             with open(p, "wb") as f:
-                f.write(get(url, binary=True))
+                f.write(data)
+            done[0] += 1
+            print(f"  dlaždice {done[0]}/{len(jobs)}", file=sys.stderr, flush=True)
             return job
 
-        with cf.ThreadPoolExecutor(8) as ex:
+        with cf.ThreadPoolExecutor(THREADS) as ex:
             list(ex.map(dl, jobs))
         # a tile with c > 0 (r > 0) carries `ov` extra pixels on its left (top) edge;
         # crop every tile to its own ts x ts cell, then append rows and columns

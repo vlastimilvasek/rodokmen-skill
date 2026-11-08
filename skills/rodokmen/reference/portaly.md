@@ -26,6 +26,21 @@ Adresy u nevyzkoušených portálů ověř při prvním použití (portály se m
   Jen část stránky v plném rozlišení: `… <snímek> 0 pracovni/detail.jpg 0.0,0.4,1.0,0.7`.
 - **Odkaz na snímek** (pole `odkaz` v `zaznamy.json`): `python3 -I tools/aron_img.py <apu_id> link <snímek>`.
 - **Svazek do dat:** `python3 -I tools/aron_img.py <apu_id> svazek` (klíč = prvních 8 znaků apu_id → pole `svazek` v zápisu).
+- **Plné rozlišení jedním požadavkem (rychlé):** ke každému snímku je v popisu svazku (`/api/aron/apu/<apu>` →
+  `digitalObjects[].files`, typ `PUBLISHED`, pole `id`, `size`, `order`) původní JPEG, který jde stáhnout celý přes
+  `https://aron.vychodoceskearchivy.cz/api/aron/referencedfiles/<id>` (~2–5 MB, 2–10 s) místo minut po dlaždicích.
+  Ověř velikost (`size`). Večer bývá ARON 3–5× pomalejší než ráno a přes den.
+- **Místní archiv celých knih (`tools/archiv_aron.py`)** – stejná struktura jako archiv MZA, takže nad oběma funguje
+  `index_knih.py`: `archiv/aron/<kniha>/0001.jpg` (originál) + `0001_m.jpg` (náhled 1600 px), kniha = 8 znaků apu.
+  - Knihy farnosti do fronty: `archiv_aron.py najdi "Obec" --pridat` (pro každou obec farnosti; vypíše i knihy bez snímků),
+    nebo `archiv_aron.py pridej <apu> …`, nebo `archiv_aron.py plan` (všechny knihy ARON ze `svazky.json`).
+  - Stažení na noc (na pozadí): `archiv_aron.py stahni --fronty 2 --do 7` – navazuje, hotové přeskočí, ověřuje velikost,
+    průběh v `archiv/aron/stahovani.log`; `archiv_aron.py stav`. Rychlost ~5–20 snímků/min, farnost (≈ 50 knih,
+    15 000 snímků, ~70 GB) za jednu noc.
+  - Dříve stažené snímky (`s<n>.jpg` v `pracovni/`): `archiv_aron.py prevzit <kniha> pracovni/<složka>` – pevný odkaz,
+    žádné místo navíc a nic se nemaže.
+  - Před stahováním snímku z portálu: `archiv_aron.py kde <kniha> <snímek>`.
+  - Mapu knihy a rejstříky zapisuj do `data/index_knih/<kniha>.json` (viz Index knih u MZA níže) – platí pro oba archivy.
 - V ARON jsou i další fondy (sčítání lidu, některé gruntovní knihy, kroniky) – `aron_search.py "Obec" "název fondu"`.
 - Stejnojmenných obcí bývá víc (Vinice u Hořic × Vinice u Velké Jesenice). Výsledky jsou seřazené podle farnosti;
   zúžit jde víc slovy oddělenými čárkou, která musí být v popisu všechna: `aron_search.py "Vinice,Hořice"`

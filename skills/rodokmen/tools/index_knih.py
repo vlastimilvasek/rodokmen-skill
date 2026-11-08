@@ -15,6 +15,9 @@ Použití:
   index_knih.py kde <obec> <druh> <rok>[-<měsíc>]   které snímky pokrývají daný rok (z mapy knihy)
   index_knih.py stav                      co je v indexu
 
+Snímky bere z archiv/<zdroj>/<kniha>/ (mza = archiv_snimku.py, aron = archiv_aron.py); <kniha> = číslo knihy MZA
+nebo 8 znaků apu ARONu (klíč v data/svazky.json). Soubor indexu: data/index_knih/<svazek>.json (mza_5915, feb3187a…).
+
 Formát data/index_knih/mza_<kniha>.json:
   {"kniha": "5915", "svazek": "mza_5915",
    "mapa": [ {"od": 2, "do": 37, "druh": "Z", "obec": "Komín", "rok_od": 1784, "rok_do": 1830, "pozn": "…"} ],
@@ -33,7 +36,14 @@ for _s in (sys.stdout, sys.stderr):
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 JSON_DIR = os.path.join(ROOT, "data", "index_knih")
 DB = os.path.join(ROOT, "archiv", "index.sqlite")
-MZA = os.path.join(ROOT, "archiv", "mza")
+ARCHIV = os.path.join(ROOT, "archiv")
+
+
+def snimek_cesta(kniha, sn):
+    """Snímek z místního archivu libovolného zdroje: archiv/<zdroj>/<kniha>/<sn4>.jpg (mza, aron, …)."""
+    for f in sorted(glob.glob(os.path.join(ARCHIV, "*", kniha, "%04d.jpg" % sn))):
+        return f
+    return None
 
 
 def magick():
@@ -77,7 +87,7 @@ def klic_jmena(s):
 
 
 def cmd_nahled(args):
-    kniha, od, do = args[0].replace("mza_", ""), int(args[1]), int(args[2])
+    kniha, od, do = args[0].replace("mza_", "").replace("aron_", ""), int(args[1]), int(args[2])
     cast = [float(x) for x in opt(args, "--cast", "0,0,1,0.35").split(",")]
     sloupce = int(opt(args, "--sloupce", "2"))
     sirka = int(opt(args, "--sirka", "900"))
@@ -87,8 +97,8 @@ def cmd_nahled(args):
     dily = []
     krok = int(opt(args, "--krok", "1"))   # např. každý 10. snímek – u souvislých knih stačí na mapu let
     for sn in range(od, do + 1, krok):
-        f = os.path.join(MZA, kniha, "%04d.jpg" % sn)
-        if not os.path.exists(f):
+        f = snimek_cesta(kniha, sn)
+        if not f:
             continue
         t = os.path.join(out_dir, "_t%04d.png" % sn)
         x0, y0, x1, y1 = cast
@@ -97,7 +107,7 @@ def cmd_nahled(args):
                         "-undercolor", "white", "-annotate", "+6+4", "sn %d" % sn, t], check=True)
         dily.append(t)
     if not dily:
-        sys.exit("Žádné snímky v archiv/mza/%s/ pro %d–%d" % (kniha, od, do))
+        sys.exit("Žádné snímky v archiv/*/%s/ pro %d–%d" % (kniha, od, do))
     out = os.path.join(out_dir, "%s_%04d-%04d.jpg" % (kniha, od, do))
     subprocess.run([m, "montage", *dily, "-tile", "%dx" % sloupce, "-geometry", "+4+4", "-background", "#888", "-quality", "85", out], check=True)
     for t in dily:

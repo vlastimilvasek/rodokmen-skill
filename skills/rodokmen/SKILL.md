@@ -264,7 +264,8 @@ Nedělej to pořád. Postup:
 | `policie_prihlasky.py Příjmení [Jméno] [od] [do]`, `karta <pořadí> out.jpg …` | pražské policejní přihlášky 1850–1914 (rodiny s dětmi a adresami), stažení karty |
 | `soal_zoomify.py <cesta nebo adresa> 0 out.jpg` | snímek SOA Litoměřice nebo ZA Opava (knihu najdi v prohlížeči; pozor na blokování) |
 | `archiv_snimku.py plan / dalsi / zarad / stav / kde <kniha> <snímek>` + `mza_archiv.js` | místní archiv snímků MZA (noční ukládání v prohlížeči, max. 2000 px – viz `reference/portaly.md`, MZA) |
-| `index_knih.py nahled / nacti / hledej <příjmení> [jméno] / kde <obec> <N\|O\|Z> <rok> / stav` | index knih z místního archivu: mapa let a stran, přepsané rejstříky → `data/index_knih/*.json` a `archiv/index.sqlite` (jen vodítko, ne doložení) |
+| `archiv_aron.py najdi "Obec" --pridat / pridej <apu> / stahni / prevzit / stav / kde <kniha> <snímek>` | místní archiv celých knih z ARONu v plném rozlišení (`archiv/aron/`, originály jedním požadavkem – viz `reference/portaly.md`, ARON) |
+| `index_knih.py nahled / nacti / hledej <příjmení> [jméno] / kde <obec> <N\|O\|Z> <rok> / stav` | index knih z místního archivu (MZA i ARON): mapa let a stran, přepsané rejstříky → `data/index_knih/*.json` a `archiv/index.sqlite` (jen vodítko, ne doložení) |
 | `matricula_dl.sh`, `matricula_batch.sh` | snímky z Matriculy (Rakousko…), URL se bere z prohlížeče |
 | `anno.py`, `anno_snap.py`, `kramerius.py` | noviny: ANNO (rakouské), Kramerius (české) |
 | `ged_import.py strom.ged "Jméno"` | předci z rodinného stromu (GEDCOM) + fronta zápisů |
