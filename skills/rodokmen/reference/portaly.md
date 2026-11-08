@@ -41,6 +41,13 @@ Adresy u nevyzkoušených portálů ověř při prvním použití (portály se m
     žádné místo navíc a nic se nemaže.
   - Před stahováním snímku z portálu: `archiv_aron.py kde <kniha> <snímek>`.
   - Mapu knihy a rejstříky zapisuj do `data/index_knih/<kniha>.json` (viz Index knih u MZA níže) – platí pro oba archivy.
+  - **Přepis rejstříku z ARONu:** `index_knih.py ctvrtiny <kniha> 2-89` vyřeže z originálů přiblížené čtvrtiny (šedá, auto-level,
+    1800 px, přesah přes hřbet) do `pracovni/idx/<kniha>/`; dva pomocníci (Sonnet) je přečtou nezávisle po dávkách 5–6 snímků,
+    `sloucit_cteni.py` je spáruje, spory rozhodneš na snímku, výsledek (JSON seznam řádků) vloží `index_knih.py vloz <kniha> <soubor>`.
+    Srovnání modelů (rejstřík N 1836–1880, ověřeno na snímku): Haiku nepoužitelné; 2× Sonnet shoda 90 %; Opus lepší v kurentu,
+    v latince soustavně chyboval; Fable nejlepší v latince, v kurentu chybuje sebejistě (bez „?“), nejdražší a nejpomalejší.
+    Kurent (zde do ~1850) ber jako nejistý i při shodě obou čtení. Pomocník občas kurent odmítne číst – v zadání výslovně
+    „přečti vše, nejisté označ ?, nic nevynechávej“. Spotřeba ~150 tis. tokenů na 6 snímků a čtenáře; 89 snímků ≈ 30 běhů, ~6 000 řádků.
 - V ARON jsou i další fondy (sčítání lidu, některé gruntovní knihy, kroniky) – `aron_search.py "Obec" "název fondu"`.
 - Stejnojmenných obcí bývá víc (Vinice u Hořic × Vinice u Velké Jesenice). Výsledky jsou seřazené podle farnosti;
   zúžit jde víc slovy oddělenými čárkou, která musí být v popisu všechna: `aron_search.py "Vinice,Hořice"`
