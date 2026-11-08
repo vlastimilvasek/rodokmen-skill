@@ -176,7 +176,7 @@ def cmd_dalsi(args):
         if not n or od <= n:
             print(json.dumps({**zaklad, "od": od, "start": {"svazek": int(x["kniha"]), "od": od, "pauza": 10, "ctvrtiny": vse}}, ensure_ascii=False))
             return
-        chybi = [s for s in pod if s not in ct]
+        chybi = [] if vse else [s for s in pod if s not in ct]
         if chybi:   # celé dvoustránky hotové, chybí čtvrtiny rejstříku
             print(json.dumps({**zaklad, "snimky": chybi, "start": {"svazek": int(x["kniha"]), "snimky": chybi, "pauza": 6, "ctvrtiny": True}}, ensure_ascii=False))
             return
