@@ -47,11 +47,34 @@ Adresy u nevyzkoušených portálů ověř při prvním použití (portály se m
     Srovnání modelů (rejstřík N 1836–1880, ověřeno na snímku): Haiku nepoužitelné; 2× Sonnet shoda 90 %; Opus lepší v kurentu,
     v latince soustavně chyboval; Fable nejlepší v latince, v kurentu chybuje sebejistě (bez „?“), nejdražší a nejpomalejší.
     **Propojení rejstříku se snímky (`index_knih.py cile <rejstřík>`):** v cílové knize stačí opěrné body „snimky“ {snímek: {folio, obec, druh}}
-    – levně: archy záhlaví (horních 16 % každého 3. snímku, 24 na arch) přečte Sonnet (snímek|levá|pravá strana|obec|druh|rok);
-    většina knih má jedno číslo „Pag.“ na dvojstranu vpravo. V rejstříku pravidla „cile“ (matrika/obec → kniha, „bez_obce“ u knih
+    – levně: archy záhlaví (horních 16 % každého 3. snímku, 24 na arch) přečte Sonnet (snímek|levá|pravá strana|obec|druh|rok)
+    a `index_knih.py zahlavi <kniha> <soubor>` je načte. V rejstříku pravidla „cile“ (matrika/obec → kniha, „bez_obce“ u knih
     řazených chronologicky); `hledej` pak ukáže „→ <kniha> sn. N“. Ověřeno 8/8 na známých zápisech.
     Kurent (zde do ~1850) ber jako nejistý i při shodě obou čtení. Pomocník občas kurent odmítne číst – v zadání výslovně
     „přečti vše, nejisté označ ?, nic nevynechávej“. Spotřeba ~150 tis. tokenů na 6 snímků a čtenáře; 89 snímků ≈ 30 běhů, ~6 000 řádků.
+  - **Pasti propojení (ověřeno na farnosti Dolní Újezd 1652–1858, 88 000 řádků rejstříků, 74 % propojeno):**
+    - Kotvy jsou LEVÉ strany snímků a strana mezi kotvami se zaokrouhluje dolů. Knihy číslované po stranách, u nichž pomocník
+      přečetl jen pravou stranu: `zahlavi --po-stranach` (levá = pravá − 1). Knihy s jedním číslem na dvojstranu (např. „Pag. 42“
+      vpravo, odkaz rejstříku míří na dvojstranu) bez této volby – rozliš to na 2–3 snímcích, než načteš celou knihu.
+    - Kotva bez obce se nepoužije: u knih vedených za celou farnost `zahlavi --obec farnost`.
+    - Stará kniha NOZ (17.–18. st.) má každý oddíl (N/O/Z) číslovaný od 1, ale některé (Dol. Újezd 1652–1671) mají jedno
+      stránkování přes všechny oddíly – zkontroluj u první kotvy každého oddílu.
+    - Knihy s chronologickou částí a oddíly podle vsí (Dol. Újezd 1761–1779: „Nro 1“ celá farnost do 1771, „Nro 2–13“ ves po vsi,
+      každá stránkuje od 1) – oddíly najdeš na dělicích listech (náhledy celé knihy `nahled … --sloupce 12`), kotvy oddílu stačí
+      od str. 1 (pravá strana prvního snímku) po dvou stranách na snímek; pravidla s „rok_do“ (chronologická část) a „rok_od“ +
+      obec řádku (vsi), aliasy obcí přes „kotvy_obec“ (Seč → Vidlatá Seč). Ověř 2–3 odkazy na snímku.
+    - Písmeno knihy v rejstříku bývá chybně (C místo D u let 1762–1779) – pravidla podle roku („rok_do“ u knihy C).
+    - Společný rejstřík N+O+Z s odkazem „60 N.III“ (strana 60 knihy III): pravidla „folio_re“ na číslo knihy a „druh“: „=“.
+    - Ověřuj vždy na zápisech, které už jsou v datech (stejné příjmení/rok → `cil` = snímek zápisu v `zaznamy.json`).
+  - **Mapa roků u knih bez rejstříku** (19. st., tištěné tabulky): archy horních 30 % každého 4. snímku, pomocník čte rok
+    (rámeček „Rok 1852“) a měsíc prvního zápisu → `zahlavi <kniha> <soubor> --bez-folia --mapa --obec X --druh N`;
+    `kde <obec> N <rok>` pak ukáže snímky. Sonnet u starších rukopisných knih rok často jen odhadne – nejisté („?“) se neberou;
+    ověř 5–6 roků na snímku, nečitelnou knihu přečti sám (70 vzorků ≈ 3 archy).
+  - **Volba modelu pomocníka:** čísla stran, roky ze záhlaví a tištěné tabulky zvládne Sonnet. Rejstříky psané kurentem
+    18. století Sonnet nezvládá (Štefl → „Standl?“, Švec → „Spáčil?“, ~90 % druhých z dvojice nečitelných, dopočítává roky,
+    kurentové S v hlavičce čte jako P a stránku pak odmítne) – tam Opus (~6 % nečitelných míst). Do zadání dej kalibrační vzor
+    (5–7 správně přečtených řádků jedné čtvrtiny), zákaz dopočítávat roky a strany, a PRVNÍ čtvrtinu každého pomocníka si
+    ověř dřív, než výsledek vložíš. Pomocníci občas vloží prázdné pole navíc – `zahlavi` to snese, vlastní skripty ne.
 - V ARON jsou i další fondy (sčítání lidu, některé gruntovní knihy, kroniky) – `aron_search.py "Obec" "název fondu"`.
 - Stejnojmenných obcí bývá víc (Vinice u Hořic × Vinice u Velké Jesenice). Výsledky jsou seřazené podle farnosti;
   zúžit jde víc slovy oddělenými čárkou, která musí být v popisu všechna: `aron_search.py "Vinice,Hořice"`

@@ -9,6 +9,11 @@ Z nich se staví archiv/index.sqlite (FTS5, normalizovaný pravopis příjmení)
 Použití:
   index_knih.py nahled <kniha> <od> <do> [--cast x0,y0,x1,y1] [--sloupce N] [--sirka PX] [--krok N]
         náhledový arch: zvolená část snímků od–do vedle sebe s čísly snímků → pracovni/idx/… (pro čtení mapy knihy)
+  index_knih.py ctvrtiny <kniha> <od-do>  přiblížené čtvrtiny snímků pro přepis rejstříku → pracovni/idx/<kniha>/
+  index_knih.py vloz <kniha> <řádky.json> přečtený rejstřík do indexu
+  index_knih.py zahlavi <kniha> <záhlaví.txt> [--obec X] [--druh N] [--po-stranach] [--bez-folia] [--od N --do N] [--mapa]
+        přečtená záhlaví (snímek|levá|pravá|obec|druh|rok|měsíc) → opěrné body a mapa roků knihy
+  index_knih.py cile <rejstřík>           propojí řádky rejstříku se snímky zápisů (pravidla „cile“ v jeho JSON)
   index_knih.py nacti                     postaví archiv/index.sqlite ze všech data/index_knih/*.json
   index_knih.py hledej <příjmení> [jméno] [--obec X] [--od R] [--do R] [--druh N|O|Z]
         rejstříky a zápisy; pravopis se sjednocuje (Vašek = Waschek = Wašek, Kachlík = Kachlikowa…)
@@ -291,18 +296,24 @@ def _interpoluj(body, f):
     nad = [b for b in body if b[0] >= f]
     if pod and nad:
         (f1, s1), (f2, s2) = pod[-1], nad[0]
-        return s1 if f1 == f2 else round(s1 + (f - f1) * (s2 - s1) / (f2 - f1))
+        # kotvy = levé strany snímků → strana patří snímku, jehož levá strana je ≤ f (dolů, ne zaokrouhlení „napůl“)
+        return s1 if f1 == f2 else s1 + int((f - f1) * (s2 - s1) // (f2 - f1))
     (f1, s1) = pod[-1] if pod else nad[0]
     if abs(f - f1) > 6:
         return None
-    return s1 + round((f - f1) / 2)
+    return s1 + (f - f1) // 2
 
 
 def cmd_cile(args):
     """Doplní k řádkům rejstříku snímek zápisu (cil, cil_kniha) podle pravidel „cile“ v data/index_knih/<rejstřík>.json:
     "cile": [{"matrika": "B", "kniha": "feb3187a", "druh": "N"}, {"obec": "Desná", "kniha": "6608e6da"}, {"kniha": "0e3311d5"}]
     (první shoda vyhraje; „matrika“ = písmeno v poznámce „matrika X“, „obec“ = začátek názvu obce, bez podmínky = výchozí).
-    Cílová kniha musí mít v „snimky“ opěrné body {snímek: {folio: levá strana, obec, druh}}."""
+    Další podmínky pravidla: „rok_od“/„rok_do“ (část knihy podle let – např. chronologická část a oddíly podle vsí),
+    „folio_re“ (regulární výraz na odkaz rejstříku, např. číslo knihy „N\\.?\\s*III\\b“ v „60 N.III“), „druh_radku“ (N/O/Z řádku).
+    Volba cíle: „druh“ = oddíl cílové knihy („=“ = podle druhu řádku – společný rejstřík N+O+Z), „bez_obce“ (kniha za celou
+    farnost – kotvy všech obcí dohromady), „kotvy_obec“ (vynucený oddíl/alias: Seč → kotvy obce „Vidlatá Seč“, „farnost“).
+    Cílová kniha musí mít v „snimky“ opěrné body {snímek: {folio: LEVÁ strana snímku, obec (neprázdná!), druh}} – viz „zahlavi“.
+    Strana mezi kotvami patří snímku, jehož levá strana je ≤ strana (zaokrouhlení dolů)."""
     kniha = args[0]
     p = os.path.join(JSON_DIR, kniha + ".json")
     d = json.load(open(p, encoding="utf-8"))
@@ -319,6 +330,14 @@ def cmd_cile(args):
                 continue
             if "obec" in pr and _klic_obce(r.get("obec")) != _klic_obce(pr["obec"]):
                 continue
+            if "folio_re" in pr and not re.search(pr["folio_re"], r.get("folio") or ""):   # číslo knihy v odkazu rejstříku („60 N.III“)
+                continue
+            if "druh_radku" in pr and r.get("druh") != pr["druh_radku"]:
+                continue
+            if "rok_do" in pr and not (r.get("rok") and r["rok"] <= pr["rok_do"]):   # část knihy jen do roku X (např. chronologická část)
+                continue
+            if "rok_od" in pr and not (r.get("rok") and r["rok"] >= pr["rok_od"]):
+                continue
             cil = pr; break
         r.pop("cil", None); r.pop("cil_kniha", None)
         f = _cislo_strany(r.get("folio"))
@@ -328,7 +347,9 @@ def cmd_cile(args):
         if k2 not in kotvy:
             kotvy[k2] = _kotvy(k2)
         druh = cil.get("druh", "*")
-        ob = "*" if cil.get("bez_obce") else _klic_obce(r.get("obec"))
+        if druh == "=":                      # společný rejstřík N+O+Z: oddíl cílové knihy podle druhu řádku
+            druh = r.get("druh") or "*"
+        ob = "*" if cil.get("bez_obce") else _klic_obce(cil.get("kotvy_obec") or r.get("obec"))   # kotvy_obec = vynucený oddíl cílové knihy
         body = kotvy[k2].get((ob, druh))
         sn = _interpoluj(body, f) if body else None
         if sn:
@@ -365,6 +386,71 @@ def _rozsah(sn):
     return "%d–%d" % (sn[0], sn[-1]) if sn else "–"
 
 
+def cmd_zahlavi(args):
+    """Načte přečtená záhlaví snímků do knihy: řádky `snímek|levá strana|pravá strana|obec|druh|rok[|měsíc]` (pomocník z archů
+    `nahled`). Vyplní „snimky“ {sn: {folio, obec, druh, rok, mesice}} – opěrné body pro „cile“ a pro „kde“.
+      --obec X / --druh N   výchozí obec a druh, když v řádku chybí (obec se jinak přenáší z předchozího řádku);
+                            u knih za celou farnost dej --obec farnost (kotvy bez obce „cile“ nepoužije)
+      --po-stranach         kniha číslovaná po stranách a přečtena jen pravá strana → levá = pravá − 1 (kotva = levá strana);
+                            NEdávat u knih s jedním číslem na dvojstranu
+      --bez-folia           čísla stran nebrat (mapa roků – pomocníci je rádi dopočítávají)
+      --od N --do N         jen snímky v rozsahu (část knihy, např. jen oddíl jedné obce)
+      --mapa                přestavět „mapa“ (souvislé úseky obec+druh s rozsahem let; oddíly „rejstřík“ zůstanou)
+    Nejisté údaje s „?“ se neberou (rok, měsíc, číslo strany). Toleruje prázdné pole navíc (druh se hledá ve 4.–7. poli)."""
+    kniha, src = args[0].replace("aron_", ""), args[1]
+    p = os.path.join(JSON_DIR, kniha + ".json")
+    d = json.load(open(p, encoding="utf-8")) if os.path.exists(p) else {"kniha": kniha, "svazek": kniha, "mapa": [], "snimky": {}, "rejstrik": [], "zapisy": []}
+    obec, druh = opt(args, "--obec", ""), opt(args, "--druh", "")
+    od, do = int(opt(args, "--od", "0")), int(opt(args, "--do", "999999"))
+    po_str, bez_f = "--po-stranach" in args, "--bez-folia" in args
+    jiste = lambda t: "" if "?" in (t or "") else (t or "").strip()
+    useky, n = [], 0
+    for radek in open(src, encoding="utf-8"):
+        c = [x.strip() for x in radek.rstrip("\n").split("|")]
+        if not c or not c[0].isdigit() or not (od <= int(c[0]) <= do):
+            continue
+        c += [""] * 8
+        j = next((i for i in range(3, 7) if re.fullmatch(r"[NOZR]\??", c[i])), 4)
+        sn, lev, prav = c[0], jiste(c[1]), jiste(c[2])
+        ob = (c[3] if j > 3 else "").replace("?", "").strip() or obec
+        dr = c[j].replace("?", "").strip()[:1] or druh
+        rok, mes = jiste(c[j + 1]), jiste(c[j + 2])
+        obec, druh = ob, dr
+        if dr == "R":
+            continue
+        folio = ""
+        if not bez_f:
+            if lev and prav:
+                folio = lev + "–" + prav
+            elif lev:
+                folio = lev
+            elif prav.isdigit() and po_str and int(prav) > 0:
+                folio = str(int(prav) - 1)
+            elif prav:
+                folio = prav
+        s = d.setdefault("snimky", {}).get(sn, {})
+        s.update({k: v for k, v in (("folio", folio), ("obec", ob), ("druh", dr), ("rok", rok), ("mesice", mes)) if v})
+        d["snimky"][sn] = s
+        n += 1
+        rr = [int(x) for x in re.findall(r"1[5-9]\d\d", rok)]
+        if useky and useky[-1]["obec"] == ob and useky[-1]["druh"] == dr:
+            useky[-1]["do"] = int(sn); useky[-1]["roky"] += rr
+        else:
+            useky.append({"od": int(sn), "do": int(sn), "druh": dr, "obec": ob, "roky": rr})
+    if "--mapa" in args:
+        mapa = [m for m in d.get("mapa", []) if m.get("obec") == "rejstřík"]
+        for u in useky:
+            if u["roky"] and u["obec"]:
+                mapa.append({"od": u["od"], "do": u["do"], "druh": u["druh"], "obec": u["obec"],
+                             "rok_od": min(u["roky"]), "rok_do": max(u["roky"]), "pozn": "ze záhlaví snímků"})
+        d["mapa"] = mapa
+    os.makedirs(JSON_DIR, exist_ok=True)
+    with open(p, "w", encoding="utf-8", newline="\n") as f:
+        json.dump(d, f, ensure_ascii=False, indent=1); f.write("\n")
+    print("%s: záhlaví %d snímků, mapa %d oddílů" % (os.path.relpath(p, ROOT), n, len(d.get("mapa", []))))
+    cmd_nacti([])
+
+
 def cmd_stav(args):
     for f in sorted(glob.glob(os.path.join(JSON_DIR, "*.json"))):
         d = json.load(open(f, encoding="utf-8"))
@@ -373,7 +459,7 @@ def cmd_stav(args):
 
 
 def main():
-    cmds = ("nahled", "ctvrtiny", "vloz", "cile", "nacti", "hledej", "kde", "stav")
+    cmds = ("nahled", "ctvrtiny", "vloz", "zahlavi", "cile", "nacti", "hledej", "kde", "stav")
     if len(sys.argv) < 2 or sys.argv[1] not in cmds:
         print(__doc__)
         sys.exit(2)

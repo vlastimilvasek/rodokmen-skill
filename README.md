@@ -9,8 +9,9 @@ znalost rodiny a rozhodujete.
 
 Vznikl při skutečném hledání předků jedné rodiny.
 
-> **Fork** (vlastimilvasek): verze 0.5.0-vv2 = 0.5.0 + stránky míst a domů (historie obce, kroniky, staré mapy),
-> export do GEDCOM, nasazení na Apache/Plesk, přehled prošlých knih, postup pro MZA Brno, místní archiv snímků MZA.
+> **Fork** (vlastimilvasek): verze 0.5.0-vv4 = 0.5.0 + stránky míst a domů (historie obce, kroniky, staré mapy),
+> export do GEDCOM, nasazení na Apache/Plesk, přehled prošlých knih, postup pro MZA Brno, místní archiv snímků MZA a ARON,
+> index rejstříků propojený se snímky (`index_knih.py`: čtvrtiny, záhlaví, mapy roků, pravidla pro oddíly knih).
 
 **Aktuální verze: 0.5.0 (říjen 2026).** Skill se průběžně vyvíjí – opravuji chyby a doplňuji postupy pro další archivy
 podle toho, na co narazíte vy. Jak aktualizovat, najdete v části [Instalace](#instalace), seznam změn
