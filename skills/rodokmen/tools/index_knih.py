@@ -67,7 +67,7 @@ def klic_prijmeni(s):
     """Sjednocení pravopisu příjmení pro hledání: bez diakritiky, německé/latinské zápisy → české, bez ženských koncovek."""
     s = unicodedata.normalize("NFKD", s or "").encode("ascii", "ignore").decode().lower()
     s = re.sub(r"[^a-z]", "", s)
-    for a, b in (("sch", "s"), ("tsch", "c"), ("cz", "c"), ("tz", "c"), ("sz", "s"), ("ss", "s"), ("w", "v"),
+    for a, b in (("sch", "s"), ("tsch", "c"), ("rz", "r"), ("cz", "c"), ("tz", "c"), ("sz", "s"), ("ss", "s"), ("w", "v"),
                  ("th", "t"), ("ph", "f"), ("ck", "k"), ("qu", "kv"), ("y", "i"), ("j", "i"), ("x", "ks"), ("g", "h")):
         s = s.replace(a, b)
     for kon in ("ovna", "ova", "inna", "ina", "in", "a"):   # Kachlíková, Kachlikowa, Wotawin, Wotawa → kachlik / votav
