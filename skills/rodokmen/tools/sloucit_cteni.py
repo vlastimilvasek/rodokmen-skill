@@ -30,6 +30,11 @@ def _cislo(s):
     return int(s) if s.isdigit() else None
 
 
+def _pag_shoda(x, y):
+    x, y = x.rstrip("?"), y.rstrip("?")
+    return bool(x and y) and (x.startswith(y) or y.startswith(x))
+
+
 def _kp(z): return ik.klic_prijmeni(z["pr"].replace("?", ""))
 def _kj(z):
     import re as _re
@@ -52,7 +57,9 @@ def sloucit(A, B, opravy=None):
                  lambda a, b: _kp(a) == _kp(b) and None not in (_cislo(a["pag"]), _cislo(b["pag"])) and abs(_cislo(a["pag"]) - _cislo(b["pag"])) <= 1
                               and difflib.SequenceMatcher(None, _kj(a), _kj(b)).ratio() > 0.6,
                  lambda a, b: a["pag"].rstrip("?") == b["pag"].rstrip("?") and (difflib.SequenceMatcher(None, _kj(a), _kj(b)).ratio() > 0.6
-                              or difflib.SequenceMatcher(None, _kp(a), _kp(b)).ratio() > 0.6)):
+                              or difflib.SequenceMatcher(None, _kp(a), _kp(b)).ratio() > 0.6),
+                 # stejná osoba, číslo strany jen částečně čitelné („74?“ × „741“ – useknuté ve hřbetu / okrajem listu)
+                 lambda a, b: _kp(a) == _kp(b) and _kj(a) == _kj(b) and _pag_shoda(a["pag"], b["pag"])):
         zbyva_a = []
         for a in jenA:
             b = najdi(a, krok)
