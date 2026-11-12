@@ -4,7 +4,8 @@ import PersonLink from '../../components/PersonLink.astro';
 import Record from '../../components/Record.astro';
 import Pedigree from '../../components/Pedigree.astro';
 import MobileTree from '../../components/MobileTree.astro';
-import { people, families, lineByK, records, dateKey, href, statusClass } from '../../lib/data.js';
+import Descent from '../../components/Descent.astro';
+import { people, families, lineByK, records, dateKey, href, statusClass, descent } from '../../lib/data.js';
 
 export function getStaticPaths() {
   return Object.keys(people).map((slug) => ({ params: { slug } }));
@@ -13,6 +14,9 @@ const p = people[Astro.params.slug];
 const line = p.line ? lineByK[p.line] : null;
 const recs = [...new Set(p.records)].filter((r) => records[r]).sort((a, b) => dateKey(records[a].date) - dateKey(records[b].date));
 const path = [...p.path].reverse().filter(Boolean);
+const descentGens = descent(p.slug, 1);
+const descentAll = descentGens.length ? descent(p.slug) : [];
+const descentEnd = descentAll.at(-1)?.next ? people[descentAll.at(-1).next] : null;
 ---
 <Base title={p.name} description={`${p.name} ${p.years} – ${p.rel}`}>
   <div class="crumbs">
@@ -70,6 +74,16 @@ const path = [...p.path].reverse().filter(Boolean);
   <h2>Předci</h2>
   <div class="only-desktop"><Pedigree k={p.k} /></div>
   <div class="only-mobile"><MobileTree k={p.k} /></div>
+
+  {descentGens.length > 0 && (
+    <>
+      <h2>Potomci</h2>
+      <Descent slug={p.slug} />
+      {descentAll.length > 1 && (
+        <p class="dz-link"><a href={href.descent(p.slug)}>Všichni potomci – {descentAll.length} {descentAll.length < 5 ? 'generace' : 'generací'}{descentEnd && <> až k výchozí osobě ({descentEnd.name})</>} →</a></p>
+      )}
+    </>
+  )}
 
   {p.docs.length > 0 && (
     <>

@@ -1,0 +1,7 @@
+---
+// Odkaz na osobu/příbuzného z krabičky refBox(); bez odkazu = jen jméno; null = „neznámý“.
+const { b, unknown = 'neznámý' } = Astro.props;
+---
+{b ? (b.url
+  ? <a class="person-link" href={b.url}><span class="nm">{b.name}</span>{b.years && <span class="yrs">{b.years}</span>}</a>
+  : <span>{b.name}</span>) : <span class="muted">{unknown}</span>}

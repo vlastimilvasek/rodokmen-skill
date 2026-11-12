@@ -27,7 +27,13 @@ LINES = {
 
 # Příbuzní mimo přímou linii (sourozenci, strýcové…): k = číslo předka, ke kterému patří.
 # dict(k=16, n="Josef Novák (1865–1920)", t="Bratr Jana. Kovář v …", r=["klic_zapisu"])
-# Kdo není sourozencem předka k (sestřenice, neteř…), dostane sour=False – na stránce rodiny pak není mezi dětmi.
+# Každý člověk zvlášť (ne „sourozenci Jana“ v jednom textu) – web dělá každému stránku, řadí ho podle narození
+# a kreslí ho do stromu potomků. Jméno končí roky v závorce: "(1865–1920)", "(* 1865)", "(asi 1860–1920)".
+# Kdo není sourozencem předka k (sestřenice, neteř, druhý manžel…), dostane sour=False – na stránce rodiny pak není mezi dětmi.
+# Volitelně: nar="12. 3. 1865" (datum narození pro řazení, když ho nelze vzít z křtu v r), a vazby, ze kterých web staví
+# rodokmen a potomky i u příbuzných: otec=, matka=, partner= – číslo = Kekulé předka (otec=10), text shodný s n=
+# jiného příbuzného = odkaz na něj (matka="Anna Nováková (1840–1900)"), jiný text = jen jméno (partner="Marie Dvořáková").
+# Děti se z otec/matka dopočítají samy. Příklad nevlastního sourozence: dict(k=5, n="Josefa Lazarová (1928)", otec=10, matka="Marie Muzikářová", …)
 SIDE = [
 ]
 

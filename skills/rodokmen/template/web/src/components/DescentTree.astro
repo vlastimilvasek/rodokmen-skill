@@ -1,0 +1,92 @@
+---
+// Potomci – „obrácený strom“: co generace, to jeden řádek. Děti visí pod svými rodiči (pod spojnicí manželů),
+// dítě v přímé linii je zobrazené jako pár s partnerem a jeho děti tvoří další řádek.
+// Rozložení se počítá při sestavení webu (pevné rozměry v px), spojnice kreslí SVG; široký strom se posouvá vodorovně.
+//
+import { people, descent, href, birthLabel } from '../lib/data.js';
+const { slug } = Astro.props;
+const gens = descent(slug);
+
+const W = 150, GAP = 14, CGAP = 18, H = 58, V = 54, LABEL = 96, PAD = 12;
+const CW = 2 * W + CGAP;
+const rowY = (r) => PAD + r * (H + V);
+
+const personItem = (s, cls) => ({ name: people[s].name, years: people[s].years || ' ', url: href.person(s), cls: `${cls} ${people[s].st}` });
+const spouseItem = (g) => (g.spouse && people[g.spouse]
+  ? personItem(g.spouse, 'dt-spouse')
+  : { name: g.spouseNote || 'neznámý partner', years: ' ', url: null, cls: 'dt-empty' });
+
+// rows[r] = položky řádku r; položka = { kind: 'single' | 'couple', x (levý okraj), boxes: [...], childX (kam vede čára od rodičů), junction (odkud vedou čáry k dětem) }
+const rows = [];
+let anchor = 0;
+if (gens.length) {
+  const g0 = gens[0];
+  rows.push([{ kind: 'couple', x: -CW / 2, boxes: [personItem(g0.person, 'dt-anc'), spouseItem(g0)], childX: null, junction: 0 }]);
+}
+gens.forEach((g, i) => {
+  const nextGen = gens[i + 1];
+  const items = g.kids.map((c) => {
+    const isCouple = nextGen && c.slug === nextGen.person;
+    return isCouple
+      ? { kind: 'couple', w: CW, boxes: [personItem(c.slug, 'dt-anc'), spouseItem(nextGen)] }
+      : { kind: 'single', w: W, boxes: [{ name: c.name, years: c.years || birthLabel(c.sort) || ' ', url: c.url, cls: c.anc ? `dt-anc ${people[c.slug]?.st ?? ''}` : 'dt-sib' }] };
+  });
+  const total = items.reduce((t, it) => t + it.w, 0) + GAP * Math.max(0, items.length - 1);
+  let x = anchor - total / 2;
+  let nextAnchor = null;
+  for (const it of items) {
+    it.x = x;
+    it.childX = x + W / 2;                      // čára od rodičů vede ke krevnímu příbuznému (levý box páru)
+    if (it.kind === 'couple') { it.junction = x + W + CGAP / 2; nextAnchor = it.junction; }
+    x += it.w + GAP;
+  }
+  rows.push(items);
+  if (nextAnchor !== null) anchor = nextAnchor;
+});
+
+const all = rows.flat();
+const minX = Math.min(...all.map((it) => it.x));
+const maxX = Math.max(...all.map((it) => it.x + (it.kind === 'couple' ? CW : W)));
+const dx = LABEL - minX;
+const width = Math.ceil(maxX - minX + LABEL + PAD);
+const height = rowY(rows.length - 1) + H + PAD;
+
+// spojnice: od spojnice manželů dolů, vodorovně nad dětmi, svisle ke každému dítěti
+// v každém řádku je nejvýš jeden pár – rodiče dalšího řádku
+const paths = [];
+for (let r = 1; r < rows.length; r++) {
+  const parent = rows[r - 1].find((it) => it.kind === 'couple');
+  const items = rows[r];
+  if (!items.length || !parent) continue;
+  const yParent = rowY(r - 1) + H / 2;
+  const yBar = rowY(r) - V / 2;
+  const px = parent.junction + dx;
+  const xs = items.map((it) => it.childX + dx);
+  paths.push(`M${px},${yParent}V${yBar}`);
+  paths.push(`M${Math.min(px, ...xs)},${yBar}H${Math.max(px, ...xs)}`);
+  for (const x of xs) paths.push(`M${x},${yBar}V${rowY(r)}`);
+}
+const genLabel = (r) => (r === 0 ? 'výchozí pár' : `${r}. generace`);
+---
+{gens.length > 0 && (
+  <div class="dtree-scroll">
+    <div class="dtree" style={`width:${width}px;height:${height}px`}>
+      <svg class="dtree-lines" width={width} height={height} aria-hidden="true"><path d={paths.join('')} /></svg>
+      {rows.map((items, r) => (
+        <>
+          <span class="dtree-label" style={`top:${rowY(r) + H / 2 - 9}px`}>{genLabel(r)}</span>
+          {items.map((it) => it.boxes.map((b, j) => {
+            const left = it.x + dx + (j === 1 ? W + CGAP : 0);
+            const style = `left:${left}px;top:${rowY(r)}px;width:${W}px;height:${H}px`;
+            return b.url
+              ? <a class={`dt-box ${b.cls}`} style={style} href={b.url} title={b.name}><span class="nm">{b.name}</span><span class="y">{b.years}</span></a>
+              : <span class={`dt-box ${b.cls}`} style={style}><span class="nm">{b.name}</span><span class="y">{b.years}</span></span>;
+          }))}
+          {items.filter((it) => it.kind === 'couple').map((it) => (
+            <span class="dtree-x" style={`left:${it.x + dx + W}px;top:${rowY(r) + H / 2 - 11}px;width:${CGAP}px`} aria-hidden="true">×</span>
+          ))}
+        </>
+      ))}
+    </div>
+  </div>
+)}

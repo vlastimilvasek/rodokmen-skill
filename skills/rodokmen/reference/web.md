@@ -100,3 +100,14 @@ Znovu spusť `python3 -I SKILL_DIR/tools/novy_projekt.py <složka projektu>`. Da
 a soubory ve `web/`, které se liší od nové šablony, taky – staré verze uloží do `pracovni/zaloha_web_<datum>/` a vypíše jejich seznam.
 Upravoval-li jsi s uživatelem vzhled (styly, stránky), převezmi úpravy ze zálohy (porovnej soubory) a ověř web. Pak ve `web/`
 `npm install` a `npm run data`. Starou šablonu přihlášení `export_web.py` odmítne s výzvou k aktualizaci.
+
+## Stránky osob: Předci a Potomci
+- Stránka předka (`/osoba/<slug>/`) i příbuzného (`/pribuzny/<slug>/`) má stejné sekce: Rodina (karty rodiče, partner a děti,
+  sourozenec v linii), Předci (rodokmen tři generace – `Pedigree.astro`, na mobilu `MobileTree.astro`), Potomci (pár × děti
+  chronologicky – `Descent.astro`; široká řada dětí se posouvá do stran) a Zápisy z matrik.
+- Odkaz „Všichni potomci“ vede na `/potomci/<slug>/` (`DescentTree.astro`): obrácený strom, co generace, to řádek, od páru
+  po přímé linii až k výchozí osobě; pozice se počítají při sestavení (px), spojnice kreslí SVG, široký strom se posouvá do stran.
+- Data: u předků vazby plynou z Kekulého čísel, u příbuzných z polí `otec`/`matka`/`partner` v `SIDE` (viz `data.md`);
+  logika je v `lib/data.js` (`descent()`, `relativeDescent()`, `pedigreeCols()`).
+- Past Astro: v záhlaví `---` nejde psát JSX (ani pomocnou funkci vracející značky) – „Failed to parse source for import
+  analysis“; pomocné šablony musí být samostatné komponenty (`DzBox.astro`, `RefLink.astro`).

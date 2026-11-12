@@ -9,7 +9,8 @@ znalost rodiny a rozhodujete.
 
 Vznikl při skutečném hledání předků jedné rodiny.
 
-> **Fork** (vlastimilvasek): verze 0.5.0-vv4 = 0.5.0 + stránky míst a domů (historie obce, kroniky, staré mapy),
+> **Fork** (vlastimilvasek): verze 0.5.0-vv5 = 0.5.0 + stránky míst a domů (historie obce, kroniky, staré mapy), strom potomků a jednotné stránky
+> příbuzných (vazby otec/matka/partner),
 > export do GEDCOM, nasazení na Apache/Plesk, přehled prošlých knih, postup pro MZA Brno, místní archiv snímků MZA a ARON,
 > index rejstříků propojený se snímky (`index_knih.py`: čtvrtiny, záhlaví, mapy roků, pravidla pro oddíly knih).
 

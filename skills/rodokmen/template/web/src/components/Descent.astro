@@ -1,0 +1,47 @@
+---
+// Potomci – svislý diagram: pár → jejich děti; v plné verzi pokračuje dítětem v linii dolů.
+// slug = přímý předek (full=false: jen jedna generace pro stránku osoby); gens = hotové generace
+// (např. z relativeDescent() pro příbuzného mimo linii). Krabička: {name, years, url|null, st}.
+//
+import DzBox from './DzBox.astro';
+import { people, descent, href, birthLabel } from '../lib/data.js';
+const { slug, full = false, gens: given } = Astro.props;
+const pb = (s) => (people[s] ? { name: people[s].name, years: people[s].years || '', url: href.person(s), st: people[s].st } : null);
+const gens = given ?? descent(slug, full ? Infinity : 1).map((g) => ({ ...g, self: pb(g.person), spouse: g.spouse ? pb(g.spouse) : null }));
+---
+{gens.length > 0 && (
+  <div class={`descent${full ? ' descent-full' : ''}`}>
+    {gens.map((g, i) => (
+      <section class="dz-gen" aria-label={full ? (i === 0 ? 'Výchozí pár' : `${i}. generace potomků`) : 'Pár a jejich děti'}>
+        {full && i > 0 && <p class="dz-genlabel">{i}. generace potomků</p>}
+        <div class="dz-couple">
+          <DzBox b={g.self} cls="dz-self" />
+          <span class="dz-x" aria-label="manželé">×</span>
+          {g.spouse ? <DzBox b={g.spouse} /> : <span class="dz-box dz-empty">{g.spouseNote}</span>}
+        </div>
+        {g.kids.length > 0 && (
+          <>
+            <div class="dz-stem" aria-hidden="true"></div>
+            <ul class="dz-kids">
+              {g.kids.map((c) => (
+                <li>
+                  <a class={`dz-box dz-kid${c.anc ? ' dz-anc' : ''}${full && c.slug === g.next ? ' dz-next' : ''}`} href={c.url}
+                    title={c.anc ? 'přímý předek' : 'mimo přímou linii'}>
+                    <span class="nm">{c.name}</span>
+                    <span class="y">{c.years || birthLabel(c.sort) || ' '}</span>
+                    {full && c.slug === g.next && i < gens.length - 1 && <span class="dz-cont">pokračuje níže ↓</span>}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
+        {full && i < gens.length - 1 && <div class="dz-down" aria-hidden="true"></div>}
+      </section>
+    ))}
+  </div>
+)}
+<script>
+  // široká řada dětí: po načtení posunout doprostřed, ať jsou rodiče uprostřed a děti na obě strany
+  for (const el of document.querySelectorAll('.descent')) el.scrollLeft = (el.scrollWidth - el.clientWidth) / 2;
+</script>

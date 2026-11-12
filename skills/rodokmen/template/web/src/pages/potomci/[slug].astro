@@ -1,0 +1,27 @@
+---
+// Potomci (strom potomků) osoby – samostatná stránka, „obrácený strom“.
+import Base from '../../layouts/Base.astro';
+import DescentTree from '../../components/DescentTree.astro';
+import { people, families, descent, href } from '../../lib/data.js';
+
+export function getStaticPaths() {
+  return Object.values(people)
+    .filter((p) => p.ownFamily && families[p.ownFamily])
+    .map((p) => ({ params: { slug: p.slug } }));
+}
+const p = people[Astro.params.slug];
+const gens = descent(p.slug);
+const last = gens.at(-1);
+const end = last?.next ? people[last.next] : null;
+const nKids = gens.reduce((n, g) => n + g.kids.length, 0);
+const spouse = gens[0]?.spouse ? people[gens[0].spouse] : null;
+const genWord = (n) => (n === 1 ? 'generace' : n < 5 ? 'generace' : 'generací');
+---
+<Base title={`Potomci – ${p.name}`} description={`Strom potomků: ${p.name} ${p.years}`}>
+  <p class="crumbs"><a href={href.person(p.slug)}>{p.name} {p.years}</a> → potomci</p>
+  <h1>Potomci: {p.name}{spouse && <> a {spouse.name}</>}</h1>
+  <p class="lead">Strom potomků tohoto páru – co řádek, to generace – až k výchozí osobě rodokmenu{end && <> (<a href={href.person(end.slug)}>{end.name}</a>)</>}: {gens.length} {genWord(gens.length)}, {nKids} {nKids === 1 ? 'dítě' : nKids < 5 ? 'děti' : 'dětí'}.</p>
+  <p class="small muted">Zvýraznění jsou přímí předkové – jejich rodina pokračuje v dalším řádku. Ostatní jsou jejich sourozenci, na které jsme v matrikách narazili;
+    sourozence hledáme postupně, u starších generací proto nemusí být úplní. Široký strom se dá posouvat do stran.</p>
+  <DescentTree slug={p.slug} />
+</Base>

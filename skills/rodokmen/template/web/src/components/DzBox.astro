@@ -1,0 +1,7 @@
+---
+// Krabička v diagramu potomků: {name, years, url|null, st}; bez odkazu = jen jméno (partner zapsaný textem).
+const { b, cls = '' } = Astro.props;
+---
+{b.url
+  ? <a class={`dz-box ${cls} ${b.st ?? ''}`} href={b.url}><span class="nm">{b.name}</span><span class="y">{b.years || ' '}</span></a>
+  : <span class={`dz-box ${cls} dz-plain`}><span class="nm">{b.name}</span><span class="y">{b.years || ' '}</span></span>}

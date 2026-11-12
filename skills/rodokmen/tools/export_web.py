@@ -360,8 +360,33 @@ def main():
         rs = base if base not in rel_used else f"{base}-{len(rel_used)}"
         rel_used.add(rs)
         rr = [r for r in e.get("r", []) if r in recs]
-        side_of[id(e)] = dict(slug=rs, name=e["n"], text=e["t"], records=rr, sib=e.get("sour", True),
+        side_of[id(e)] = dict(slug=rs, name=e["n"], text=e["t"].replace("**", ""), records=rr, sib=e.get("sour", True),   # **tučně** web nevykresluje
                               of=slugs.get(e["k"]), sort=birth_key(["* " + e["nar"]], [], recs) if e.get("nar") else birth_key([e["n"], e["t"]], rr, recs))
+
+    # Vazby mezi příbuznými: v SIDE smí být otec=, matka=, partner= –
+    # číslo = Kekulé předka, text shodný s n= jiného příbuzného = odkaz na něj, jiný text = jen jméno bez odkazu.
+    # Z nich web staví rodokmen a strom potomků i u příbuzných mimo linii.
+    def side_ref(v):
+        if v is None or v == "":
+            return None
+        if isinstance(v, int):
+            return dict(kind="person", slug=slugs[v], name=P[v]["n"]) if v in slugs else None
+        for s in side_of.values():
+            if s["name"] == v:
+                return dict(kind="relative", slug=s["slug"], name=v)
+        return dict(kind="text", name=str(v))
+    for e in SIDE:
+        s = side_of[id(e)]
+        s.update(father=side_ref(e.get("otec")), mother=side_ref(e.get("matka")), partner=side_ref(e.get("partner")), children=[])
+    rel_by_slug = {s["slug"]: s for s in side_of.values()}
+    for s in side_of.values():
+        pr = s["partner"]
+        if pr and pr["kind"] == "relative" and not rel_by_slug[pr["slug"]]["partner"]:
+            rel_by_slug[pr["slug"]]["partner"] = dict(kind="relative", slug=s["slug"], name=s["name"])
+    for s in sorted(side_of.values(), key=lambda x: x["sort"]):
+        for par in (s["father"], s["mother"]):
+            if par and par["kind"] == "relative":
+                rel_by_slug[par["slug"]]["children"].append(s["slug"])
 
     people = {}
     for k, p in sorted(P.items()):

@@ -4,6 +4,9 @@ který se odesílá do soukromého repozitáře na GitHubu a odtud ho stahuje Pl
 
 Použití (z kořene projektu, po `cd web && npm run data && npm run build`):
   nasadit_plesk.py            zkopíruje web/dist do nasazeni/, přidá .htaccess s přihlášením a uloží commit
+  nasadit_plesk.py --cesta /rodokmen
+                              totéž pro web v podsložce domény (např. https://petra.vaskovi.eu/rodokmen/):
+                              přepíše odkazy začínající „/“ na „/rodokmen/…“ a upraví .htaccess a vyhledávání
   (odeslání: cd nasazeni && git push – jen se souhlasem uživatele)
 
 Do nasazeni/ jde jen hotový web: žádná data projektu ani odpověď na přihlašovací otázku (jen její otisk SHA-256).
@@ -53,7 +56,36 @@ RewriteRule ^ - [R=401,L]
 """
 
 
+def podcesta(cesta):
+    """Přepíše kořenové odkazy („/osoba/…“) v hotovém webu na podsložku („/rodokmen/osoba/…“)."""
+    segs = sorted((n for n in os.listdir(CIL) if n not in (".git", ".gitattributes")), key=len, reverse=True)
+    seg_re = re.compile(r'(["\'`(])/(' + "|".join(re.escape(s) for s in segs) + r')(?=[/"\'`?#)]|$)')
+    root_re = re.compile(r'((?:href|src|action)=")/(?=")')
+    pocet = 0
+    for dp, dn, fn in os.walk(CIL):
+        dn[:] = [d for d in dn if d not in (".git", "pagefind")]   # pagefind si cestu odvodí sám
+        for n in fn:
+            if not n.endswith((".html", ".js", ".css", ".svg")):
+                continue
+            p = os.path.join(dp, n)
+            s = open(p, encoding="utf-8").read()
+            t = seg_re.sub(lambda m: m.group(1) + cesta + "/" + m.group(2), s)
+            t = root_re.sub(lambda m: m.group(1) + cesta + "/", t)
+            if n == "prihlaseni.html" and dp == CIL:
+                t = t.replace("? '/' :", "? '" + cesta + "/' :")      # po přihlášení zpět na úvod
+            if "new PagefindUI({" in t:
+                t = t.replace("new PagefindUI({", "new PagefindUI({ baseUrl: '" + cesta + "/',")
+            if t != s:
+                pocet += 1
+                with open(p, "w", encoding="utf-8", newline="") as f:
+                    f.write(t)
+    print(f"odkazy převedeny na podsložku {cesta}/ v {pocet} souborech")
+
+
 def main():
+    cesta = ""
+    if "--cesta" in sys.argv:
+        cesta = "/" + sys.argv[sys.argv.index("--cesta") + 1].strip("/")
     nginx = os.path.join(ROOT, "web", "nginx.conf")
     if not os.path.exists(nginx) or not os.path.exists(os.path.join(DIST, "index.html")):
         sys.exit("Nejdřív: cd web && npm run data && npm run build (s nastavenou přihlašovací odpovědí).")
@@ -70,7 +102,13 @@ def main():
         s, d = os.path.join(DIST, n), os.path.join(CIL, n)
         shutil.copytree(s, d) if os.path.isdir(s) else shutil.copy2(s, d)
     with open(os.path.join(CIL, ".htaccess"), "w", encoding="utf-8", newline="\n") as f:
-        f.write(HTACCESS.replace("{HASH}", m.group(1)))
+        ht = HTACCESS.replace("{HASH}", m.group(1))
+        if cesta:
+            ht = ht.replace("ErrorDocument 401 /", "ErrorDocument 401 " + cesta + "/")
+            ht = ht.replace("ErrorDocument 404 /", "ErrorDocument 404 " + cesta + "/")
+        f.write(ht)
+    if cesta:
+        podcesta(cesta)
     with open(os.path.join(CIL, ".gitattributes"), "w", encoding="utf-8", newline="\n") as f:
         f.write("* -text\n")                       # soubory beze změn konců řádků
     if not os.path.isdir(os.path.join(CIL, ".git")):

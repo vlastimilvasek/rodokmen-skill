@@ -1,8 +1,14 @@
 ---
+// Příbuzný mimo přímou linii – stejná skladba stránky jako u předka: rodina, předci, potomci, zápisy.
+// Rodiče/partner/děti pocházejí z polí otec/matka/partner v SIDE.
 import Base from '../../layouts/Base.astro';
 import PersonLink from '../../components/PersonLink.astro';
 import Record from '../../components/Record.astro';
-import { people, relatives, families, records, dateKey, href, birthLabel } from '../../lib/data.js';
+import Pedigree from '../../components/Pedigree.astro';
+import MobileTree from '../../components/MobileTree.astro';
+import Descent from '../../components/Descent.astro';
+import RefLink from '../../components/RefLink.astro';
+import { people, relatives, families, records, dateKey, href, birthLabel, refBox, relativeParents, relativeDescent, splitName } from '../../lib/data.js';
 
 export function getStaticPaths() {
   return Object.keys(relatives).map((slug) => ({ params: { slug } }));
@@ -12,24 +18,35 @@ const anc = people[r.of];
 const fam = r.family ? families[r.family] : null;
 const recs = [...new Set(r.records)].filter((k) => records[k]).sort((a, b) => dateKey(records[a].date) - dateKey(records[b].date));
 const siblings = fam ? fam.side.filter((s) => s.sib && s.slug !== r.slug) : [];
+const [father, mother] = relativeParents(r).map(refBox);
+const partner = refBox(r.partner);
+const kids = (r.children ?? []).map((s) => relatives[s]).filter(Boolean);
+const dgens = relativeDescent(r.slug);
+const years = splitName(r.name, r.sort).years;
 ---
 <Base title={r.name} description={r.text}>
   <p class="crumbs">{fam ? <a href={href.family(fam.id)}>Rodina</a> : 'Příbuzní'} · {r.sib ? 'sourozenec předka' : 'příbuzný mimo přímou linii'}</p>
   <h1>{r.name}</h1>
   <div class="chips">
-    {birthLabel(r.sort) && <span class="chip">{birthLabel(r.sort)}</span>}
-    <span class="chip">{r.sib ? <>sourozenec – {anc.sex === 'M' ? 'bratr' : 'sestra'} je náš předek</> : 'příbuzný'}</span>
+    {(years || birthLabel(r.sort)) && <span class="chip">{years || birthLabel(r.sort)}</span>}
+    <span class="chip">{r.sib ? <>sourozenec – {anc.sex === 'M' ? 'bratr' : 'sestra'} je náš předek</> : 'příbuzný mimo přímou linii'}</span>
   </div>
   <p>{r.text}</p>
 
   <h2>Rodina</h2>
   <div class="grid2">
-    {r.sib && fam && (
+    {(father || mother || r.sib) && (
       <div class="card">
         <h3>Rodiče</h3>
-        <p>Otec: {fam.father ? <PersonLink slug={fam.father} /> : <span class="muted">neznámý</span>}<br />
-          Matka: {fam.mother ? <PersonLink slug={fam.mother} /> : <span class="muted">neznámá</span>}</p>
-        <p class="small"><a href={href.family(fam.id)}>Celá rodina a sourozenci →</a></p>
+        <p>Otec: <RefLink b={father} /><br />Matka: <RefLink b={mother} /></p>
+        {r.sib && fam && <p class="small"><a href={href.family(fam.id)}>Celá rodina a sourozenci →</a></p>}
+      </div>
+    )}
+    {(partner || kids.length > 0) && (
+      <div class="card">
+        <h3>Manžel/manželka a děti</h3>
+        <p>Partner: <RefLink b={partner} /><br />
+          {kids.length > 0 ? <>{kids.length > 1 ? 'Děti' : 'Dítě'}: {kids.map((c, i) => <>{i > 0 && ', '}<a href={href.relative(c.slug)}>{splitName(c.name, c.sort).name}</a></>)}</> : <span class="muted">děti zatím neznáme</span>}</p>
       </div>
     )}
     <div class="card">
@@ -38,6 +55,21 @@ const siblings = fam ? fam.side.filter((s) => s.sib && s.slug !== r.slug) : [];
       {siblings.length > 0 && <p class="small">Další sourozenci: {siblings.map((s, i) => <>{i > 0 && ', '}<a href={href.relative(s.slug)}>{s.name}</a></>)}</p>}
     </div>
   </div>
+
+  {(father || mother) && (
+    <>
+      <h2>Předci</h2>
+      <div class="only-desktop"><Pedigree root={{ kind: 'relative', slug: r.slug }} /></div>
+      <div class="only-mobile"><MobileTree root={{ kind: 'relative', slug: r.slug }} /></div>
+    </>
+  )}
+
+  {dgens.length > 0 && (
+    <>
+      <h2>Potomci</h2>
+      <Descent gens={dgens} />
+    </>
+  )}
 
   <h2>Zápisy z matrik</h2>
   {recs.length ? <div class="recs">{recs.map((k) => <Record id={k} showPeople exclude={r.of} />)}</div>

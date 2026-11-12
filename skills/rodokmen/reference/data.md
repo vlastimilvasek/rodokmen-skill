@@ -33,8 +33,15 @@ P = {
 - `r` klíče zápisů ze `zaznamy.json`. `st` viz `matriky.md`: `doc` přečteno v matrice, `prob` pravděpodobné,
   `fam` od rodiny (i strom, který si rodina vede sama, např. GEDCOM z jejího MyHeritage), `mh` cizí strom z internetu, `unk`.
 - `LINES = {8: ("Novákové", "Kováři z Holic…"), …}` – jen čísla 8–15; název rodu = příjmení v množném čísle.
-- `SIDE` – sourozenci a další příbuzní: `dict(k=<číslo předka>, n="Josef Novák (1865–1920)", t="text", r=[klíče])`. `k` je předek, jehož je příbuzný **sourozencem**; kdo sourozencem není (sestřenice, neteř…), dostane navíc `sour=False`.
-  Na webu má každý záznam vlastní stránku `/pribuzny/<slug>/` se zápisy; sourozenci se na stránce rodiny řadí s předkem chronologicky podle narození (z křestního zápisu, data za „*“ v textu, nebo roku ve jméně – proto do `n` dávejte „(* 1890)“); datum pro řazení lze zadat i klíčem `nar="10. 10. 1852"` – hodí se pro souhrnné karty typu „nevlastní sourozenci“).
+- `SIDE` – sourozenci a další příbuzní, **každý člověk jako samostatný záznam**: `dict(k=<číslo předka>, n="Josef Novák (1865–1920)", t="text", r=[klíče])`.
+  `k` je předek, jehož je příbuzný **sourozencem**; kdo sourozencem není (sestřenice, neteř, druhý manžel…), dostane navíc `sour=False`.
+  Jméno končí roky v závorce (`(1865–1920)`, `(* 1865)`, `(asi 1860–1920)`) – web je zobrazí zvlášť. Nikdy jeden záznam pro víc lidí
+  („Sourozenci Jana“) – web by ho bral jako jednu osobu s datem narození prvního z nich.
+  Volitelná pole: `nar="12. 3. 1865"` (datum narození pro řazení, když není křest v `r` – jinak by se vzal křest dítěte);
+  vazby `otec=`, `matka=`, `partner=` – číslo = Kekulé předka, text shodný s `n` jiného příbuzného = odkaz, jiný text = jen jméno.
+  Z nich web staví i u příbuzných sekce Rodina, Předci a Potomci (děti se dopočítají z `otec`/`matka` ostatních záznamů; u sourozence
+  bez `otec`/`matka` se berou rodiče předka). Nevlastní sourozenec: `otec=<k předka>, matka="Marie Nová"`.
+  Na webu má každý záznam vlastní stránku `/pribuzny/<slug>/` se zápisy; sourozenci se na stránce rodiny řadí s předkem chronologicky podle narození.
 - `ISSUES` – dvojice `("Otázka", "Vyřešeno: … / Hypotéza: … / Otevřené: …")` → stránka „Co hledáme“ (vyřešené se skryjí).
   Jde na web – nepiš sem citlivé věci (příčiny úmrtí, rodinné spory) bez souhlasu.
 - `HYPOTEZY` – `dict(rod=8, nadpis="…", text="…", polozky=[("jméno", "text")], zaznamy=[klíče])` → stránka rodu.
