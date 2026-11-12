@@ -89,7 +89,7 @@ const myOldMaps = oldMaps.filter((m) => m.place === pl.slug);
             )}
             {h.docs.length > 0 && (
               <div class="docs">{h.docs.map((img) => docByImg[img]).filter(Boolean).map((d) => (
-                <figure><a href={`/img/${d.img}.jpg`} target="_blank" rel="noopener"><img src={`/img/${d.img}.jpg`} alt={d.caption} loading="lazy" /></a>
+                <figure><a href={`/${d.full ? "zdroje" : "img"}/${d.img}.jpg`} target="_blank" rel="noopener"><img src={`/img/${d.img}.jpg`} alt={d.caption} loading="lazy" /></a>
                   <figcaption>{d.caption}{d.source && <span class="src">Zdroj: {d.source}</span>}</figcaption></figure>
               ))}</div>
             )}
@@ -103,7 +103,7 @@ const myOldMaps = oldMaps.filter((m) => m.place === pl.slug);
     <>
       <h2>Staré mapy a obrázky</h2>
       <div class="docs">{otherDocs.sort((a, b) => (a.year ?? 9999) - (b.year ?? 9999)).map((d) => (
-        <figure><a href={`/img/${d.img}.jpg`} target="_blank" rel="noopener"><img src={`/img/${d.img}.jpg`} alt={d.caption} loading="lazy" /></a>
+        <figure><a href={`/${d.full ? "zdroje" : "img"}/${d.img}.jpg`} target="_blank" rel="noopener"><img src={`/img/${d.img}.jpg`} alt={d.caption} loading="lazy" /></a>
           <figcaption>{d.year && <strong>{d.year} · </strong>}{d.caption}{d.source && <span class="src">Zdroj: {d.source}</span>}</figcaption></figure>
       ))}</div>
     </>

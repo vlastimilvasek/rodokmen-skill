@@ -86,6 +86,7 @@ nebo dotaz s větší obcí či okresem. U **víceznačných názvů** (Podolí,
 Staré mapy a fotky obcí: navíc `"misto": "Holice"` (přesně jako v `mista.json`), `"dum": "112"`, `"rok": 1839`,
 `"zdroj": "Archiv ČÚZK, císařský otisk"` – ukážou se na stránce místa (u domu), `osoby` jsou pak nepovinné.
 Obrázek ulož přes `vyrez.py dokumenty/<sken>.jpg foto_svatba_1919` (vznikne `vyrezy/` i `zdroje/`).
+Je-li v `zdroje/<img>.jpg` plné rozlišení, web u osoby i místa prokliká na něj (jinak na zmenšeninu z `vyrezy/`).
 
 ## `web.json` – nastavení webu
 Viz `web.md`.

@@ -405,7 +405,8 @@ def main():
             child=slugs.get(k // 2) if k > 1 else None, spouse=slugs.get(k ^ 1) if k > 1 else None,
             family=None, ownFamily=None, path=path,
             side=[side_of[id(s)] for s in SIDE if s["k"] == k],
-            docs=[dict(img=d["img"], caption=d["popis"], source=d.get("zdroj", "")) for d in docs_cfg if k in d.get("osoby", [])],
+            docs=[dict(img=d["img"], caption=d["popis"], source=d.get("zdroj", ""), full=os.path.exists(os.path.join(ZDROJE, d["img"] + ".jpg")))
+                  for d in docs_cfg if k in d.get("osoby", [])],
             children=[slugs[c] for c in [k // 2] + [a // 2 for a in aliases_of.get(k, [])] if k > 1 and c in slugs],
             also=[dict(k=a, rel=relation(a), line=line_of(a), child=slugs.get(a // 2)) for a in aliases_of.get(k, [])],
             sort=birth_key([p.get("y", "")] + [x for x in p.get("f", []) if x.lstrip().startswith(("*", "~"))], [], recs),   # jen vlastní údaje – v r jsou i křty dětí
@@ -496,7 +497,8 @@ def main():
                 issues=[dict(title=i, text="") if isinstance(i, str) else dict(title=i[0], text=i[1]) for i in ISSUES], stats=stats, hypotheses=hypotheses,
                 docs=[dict(img=d["img"], caption=d["popis"], people=[slugs[k] for k in d.get("osoby", []) if k in slugs],
                            place=slugify(d["misto"]) if d.get("misto") else None, house=str(d.get("dum", "")) or None,
-                           year=d.get("rok"), source=d.get("zdroj", ""))
+                           year=d.get("rok"), source=d.get("zdroj", ""),
+                           full=os.path.exists(os.path.join(ZDROJE, d["img"] + ".jpg")))   # plné rozlišení v zdroje/ → proklik
                       for d in docs_cfg if os.path.exists(os.path.join(VYREZY, d["img"] + ".jpg"))])
 
     write(os.path.join(WEB, "src", "data", "site.json"), json.dumps(site, ensure_ascii=False, indent=1))

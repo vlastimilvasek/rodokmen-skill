@@ -6,7 +6,8 @@ Mapy a záchytné body jsou v data/stare_mapy.json (seznam), každá mapa:
    "skryt": [[x0, y0, x1, y1], …],         # obdélníky, které na překryvu nemají být (seznamy majitelů, vložené výřezy)
    "zacelit": [[x0, y0, x1, y1, dx, dy], …],  # obdélník (legenda, nápis) přemalovat okolním papírem z místa posunutého o dx, dy
    "zdroj": "MZA Brno, …", "transformace": "podobnost" | "afinni",
-   "body": [{"px": [x, y], "gps": [lat, lon], "popis": "kostel sv. Martina – křížení lodí", "vynechat": false}],
+   "body": [{"px": [x, y], "gps": [lat, lon], "popis": "kostel sv. Martina – křížení lodí", "vynechat": false,
+             "vaha": 1}],            # vaha > 1 = bod má přednost (např. střed obce, když na okrajích tolik nezáleží)
    "domy": [{"px": [x, y], "cislo": "161", "popis": "Jiří Lípa (1827)"}]}
 Záchytné body = místa, která se od doby mapy nezměnila (kostely, brány, nároží, mosty); GPS odečíst na mapy.com
 (pravé tlačítko → souřadnice). Čísla domů jako body NEPOUŽÍVAT – domy se přečíslovávaly a města s předměstím
@@ -41,14 +42,16 @@ class Prevod:
         self.kx, self.ky = 111320 * math.cos(math.radians(self.lat0)), 110574
         P = np.array([b["px"] for b in pts], float)
         E = np.array([self._en(*b["gps"]) for b in pts], float)
+        w = np.sqrt(np.array([float(b.get("vaha", 1)) for b in pts]))
         if self.typ == "afinni":
-            self.M = np.linalg.lstsq(np.c_[P, np.ones(len(P))], E, rcond=None)[0]
+            self.M = np.linalg.lstsq(np.c_[P, np.ones(len(P))] * w[:, None], E * w[:, None], rcond=None)[0]
         else:   # e = a x + b y + c, n = b x − a y + d (osa y obrázku míří dolů)
             A = np.zeros((2 * len(P), 4)); r = np.zeros(2 * len(P))
             for i, ((x, y), (e, n)) in enumerate(zip(P, E)):
                 A[2 * i], r[2 * i] = [x, y, 1, 0], e
                 A[2 * i + 1], r[2 * i + 1] = [-y, x, 0, 1], n
-            self.p = np.linalg.lstsq(A, r, rcond=None)[0]
+            W = np.repeat(w, 2)
+            self.p = np.linalg.lstsq(A * W[:, None], r * W, rcond=None)[0]
         self.odchylky = [(b.get("popis", ""), math.hypot(*(np.array(self.en(*b["px"])) - e))) for b, e in zip(pts, E)]
         self.chyba = math.sqrt(sum(d * d for _, d in self.odchylky) / len(self.odchylky))
 

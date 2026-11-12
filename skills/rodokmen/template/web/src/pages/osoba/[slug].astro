@@ -88,7 +88,7 @@ const descentEnd = descentAll.at(-1)?.next ? people[descentAll.at(-1).next] : nu
   {p.docs.length > 0 && (
     <>
       <h2>Rodinné dokumenty</h2>
-      <div class="docs">{p.docs.map((d) => <figure><a href={`/img/${d.img}.jpg`} target="_blank" rel="noopener"><img src={`/img/${d.img}.jpg`} alt={d.caption} loading="lazy" /></a><figcaption>{d.caption}{d.source && <span class="src">Zdroj: {d.source}</span>}</figcaption></figure>)}</div>
+      <div class="docs">{p.docs.map((d) => <figure><a href={`/${d.full ? "zdroje" : "img"}/${d.img}.jpg`} target="_blank" rel="noopener"><img src={`/img/${d.img}.jpg`} alt={d.caption} loading="lazy" /></a><figcaption>{d.caption}{d.source && <span class="src">Zdroj: {d.source}</span>}</figcaption></figure>)}</div>
     </>
   )}
 

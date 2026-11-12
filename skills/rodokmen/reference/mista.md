@@ -64,6 +64,7 @@ snímek ČÚZK, a když je v kořeni projektu soubor `.mapy_api_klic`, i Mapy.co
   Nápis nebo legendu na prázdném papíře raději `zacelit: [[x0, y0, x1, y1, dx, dy]]` – přemaluje se papírem z místa
   posunutého o dx, dy (s měkkým okrajem); průhledná „díra“ v překryvu vypadá špatně. Zdroj musí být čistý papír.
 - `cislo` domu = číslo domu ve faktech osob (dům na stránce obce pak dostane GPS a odkaz „kde dům stál“).
+- Bod může mít `"vaha": 2` – při výpočtu transformace má přednost (např. střed obce, když na okrajích mapy tolik nezáleží; výchozí 1).
 - Kontrola: `python3 -I tools/georef.py` – odchylka každého bodu v metrech a GPS domů; `… georef.py <id> x,y` = GPS
   libovolného místa s odkazem na mapy.com. `npm run data` mapu narovná (sever nahoru, WebP s průhledným okolím).
 
